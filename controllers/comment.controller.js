@@ -16,7 +16,7 @@ const createComment = async (req, res) => {
     const existedProduct = await Product.findOne({ _id: productId, isDisabled: false });
     if (!existedProduct) {
         res.status(400);
-        throw new Error("Invalid product id");
+        throw new Error("Sản phẩm không tồn tại!");
     }
     //create new comment
     let savedComment;
@@ -29,7 +29,7 @@ const createComment = async (req, res) => {
     //check if comment data is valid
     if (!comment) {
         res.status(400);
-        res.json("Invalid comment data");
+        res.json("Dữ liệu không hợp lệ!");
     }
     //check if parent comment id is provided
     if (parentCommentId != null) {
@@ -40,7 +40,7 @@ const createComment = async (req, res) => {
         if (existedParentComment != null) {
             if (existedParentComment.product.toString() !== comment.product.toString()) {
                 res.status(400);
-                throw new Error("Parent comment and reply must link to the same product");
+                throw new Error("Bình luận và bình luận trả lời liên kết đến cùng 1 sản phẩm!");
             }
             comment.parentComment = existedParentComment._id;
             existedParentComment.replies.push(comment);
@@ -114,7 +114,7 @@ const deleteComment = async (req, res) => {
     });
     if (!comment) {
         res.status(404);
-        throw new Error("Comment not found");
+        throw new Error("Bình luận không tồn tại!");
     }
     let deletedComment;
     //comment need to be deleted is a comment
@@ -122,7 +122,7 @@ const deleteComment = async (req, res) => {
         //check permission
         if (req.user._id.toString() !== comment.user.toString() && !req.user.isAdmin) {
             res.status(400);
-            throw new Error("User cannot delete other users comment");
+            throw new Error("Bạn không thể xóa bình luận này!");
         }
         deletedComment = await Comment.findOneAndDelete({ _id: comment._id });
         //comment need to beed deleted is a reply
@@ -131,17 +131,17 @@ const deleteComment = async (req, res) => {
         //check permission
         if (req.user._id.toString() !== comment.replies[index].user.toString() && !req.user.isAdmin) {
             res.status(400);
-            throw new Error("User cannot delete other users comment");
+            throw new Error("Bạn không thể xóa bình luận này!");
         }
         comment.replies.splice(index, 1);
         deletedComment = await comment.save();
     }
     if (!deletedComment) {
         res.status(500);
-        throw new Error("Delete failed");
+        throw new Error("Xóa bình luận không thành công!");
     }
     res.status(200);
-    res.json({ message: "Comment has been deleted" });
+    res.json({ message: "Bình luận đã xóa thành công!" });
 };
 
 //user, admin change comment content
@@ -155,11 +155,11 @@ const editComment = async (req, res) => {
     });
     if (!comment) {
         res.status(404);
-        res.json({ message: "Comment not found" });
+        throw new Error("Bình luận không tồn tại!");
     }
     if (req.user._id.toString() !== comment.user.toString() && !req.user.isAdmin) {
         res.status(400);
-        throw new Error("User cannot change other users comment");
+        throw new Error("Bạn không thể thay đổi bình luận này!");
     }
     let updatedComment;
     if (comment._id.toString() === commentId.toString()) {
@@ -194,7 +194,7 @@ const disableComment = async (req, res) => {
     });
     if (!comment) {
         res.status(404);
-        throw new Error("Comment not found");
+        throw new Error("Bình luận không tồn tại!");
     }
     if (comment._id.toString() !== commentId.toString()) {
         index = comment.replies.findIndex((element) => element._id.toString() === commentId.toString());
@@ -211,11 +211,11 @@ const disableComment = async (req, res) => {
     const [existedProduct, existedUser] = await Promise.all([findProduct, findUser]);
     if (!existedProduct) {
         res.status(400);
-        throw new Error("Product not found");
+        throw new Error("Sản phẩm không tồn tại!");
     }
     if (!existedUser) {
         res.status(400);
-        throw new Error("User not found");
+        throw new Error("Tài khoản không tồn tại!");
     }
 
     //disable comment
@@ -232,7 +232,7 @@ const disableComment = async (req, res) => {
     //disable failed
     if (!disabledComment) {
         res.status(500);
-        throw new Error("Disable comment failed");
+        throw new Error("Vô hiệu hóa bình luận không thành công!");
     }
     //Note: return unsaved comment
     res.status(200);
@@ -255,7 +255,7 @@ const restoreComment = async (req, res) => {
     });
     if (!comment) {
         res.status(404);
-        throw new Error("Comment not found");
+        throw new Error("Bình luận không tồn tại!");
     }
 
     //if the comment need to disable is a reply => save its index, productId and userId
@@ -273,11 +273,11 @@ const restoreComment = async (req, res) => {
     const [existedProduct, existedUser] = await Promise.all([findProduct, findUser]);
     if (!existedProduct) {
         res.status(400);
-        throw new Error("Product not found");
+        throw new Error("Sản phẩm không tồn tại!");
     }
     if (!existedUser) {
         res.status(400);
-        throw new Error("User not found");
+        throw new Error("Tài khoản không tồn tại!");
     }
 
     //restore comment
@@ -296,7 +296,7 @@ const restoreComment = async (req, res) => {
     //restore failed
     if (!restoredComment) {
         res.status(500);
-        throw new Error("Restore failed");
+        throw new Error("Khôi phục bình luận không thành công!");
     }
     //Note: return unsaved comment
     res.status(200);

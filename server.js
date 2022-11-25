@@ -8,9 +8,6 @@ import connectDatabase from "./config/mongodb.js";
 import { notFoundMiddleware, errorhandlingMiddleware } from "./middleware/Errors.js";
 import routes from "./routes/index.js";
 
-// import swaggerJsdoc from "swagger-jsdoc";
-// import swaggerDocument from "./config/swagger.json";
-
 dotenv.config();
 connectDatabase();
 const app = express();
@@ -22,24 +19,6 @@ app.use(cors());
 //handle route for api
 routes(app);
 
-/**
- * swaggerDocument2 created by JSON file
- */
-// const options = {
-//   swaggerOptions: {
-//     url: '/swagger/v1/swagger_copy.json'
-//   },
-// };
-// const swaggerDocument2 = [null, options];  //use: ...swaggerDocument2
-
-/**
- * for swagger ui express + YAML file
- */
-// const options = {
-//   swaggerOptions: {
-//     docExpansion: "none",
-//   },
-// };
 app.use(
     "/thisistpbookstoreswagger",
     swaggerUiExpress.serve,

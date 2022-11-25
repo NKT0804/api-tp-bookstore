@@ -9,7 +9,7 @@ orderRouter.get("/", protect, admin, expressAsyncHandler(OrderController.getOrde
 orderRouter.post("/", protect, expressAsyncHandler(OrderController.createNewOrder));
 orderRouter.delete("/:id", protect, admin, expressAsyncHandler(OrderController.deleteOrder));
 orderRouter.get("/:id", protect, expressAsyncHandler(OrderController.getDetailOrderById));
-orderRouter.get("/ordered", protect, expressAsyncHandler(OrderController.getOrder));
+orderRouter.get("/ordered/:user", protect, expressAsyncHandler(OrderController.getOrder));
 orderRouter.patch("/:id/delivered", protect, admin, expressAsyncHandler(OrderController.confirmDelivered));
 orderRouter.patch("/:id/confirm", protect, admin, expressAsyncHandler(OrderController.confirmOrder));
 orderRouter.patch("/:id/cancel-user", protect, expressAsyncHandler(OrderController.cancelOrderUser));

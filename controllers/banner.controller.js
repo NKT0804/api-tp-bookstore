@@ -8,7 +8,7 @@ const createBanner = async (req, res) => {
     const isExist = await Banner.findOne({ name: name, isDisabled: false });
     if (isExist) {
         res.status(400);
-        throw new Error("Banner name is already exist");
+        throw new Error("Tên banner đã tồn tại!");
     }
     const newBanner = new Banner({
         name,
@@ -19,7 +19,7 @@ const createBanner = async (req, res) => {
     });
     if (!newBanner) {
         res.status(400);
-        throw new Error("Invalid Banner data");
+        throw new Error("Dữ liệu không hợp lệ!");
     }
     const createdBanner = await newBanner.save();
     res.status(201).json(createdBanner);
@@ -37,7 +37,7 @@ const updateBanner = async (req, res) => {
     const banner = await Banner.findOne({ _id: bannerId, isDisabled: false });
     if (!banner) {
         res.status(404);
-        throw new Error("Banner not Found");
+        throw new Error("Banner không tồn tại!");
     }
 
     banner.name = name || banner.name;
@@ -53,12 +53,12 @@ const disableBanner = async (req, res) => {
     const banner = await Banner.findById(req.params.id);
     if (!banner) {
         res.status(404);
-        throw new Error("Banner not found");
+        throw new Error("Banner không tồn tại!");
     }
 
     banner.isDisabled = true;
     await banner.save();
-    res.status(200).json({ message: "Banner has been disabled" });
+    res.status(200).json({ message: "Banner đã vô hiệu hóa thành công!" });
 };
 
 const restoreBanner = async (req, res) => {
@@ -66,12 +66,7 @@ const restoreBanner = async (req, res) => {
     const banner = await banner.findOne({ _id: bannerId, isDisabled: true });
     if (!banner) {
         res.status(404);
-        throw new Error("banner not found");
-    }
-    const duplicatedBanner = await banner.findOne({ name: banner.name, isDisabled: false });
-    if (duplicatedBanner) {
-        res.status(400);
-        throw new Error("Restore this banner will result in duplicated banner name");
+        throw new Error("Banner không tồn tại!");
     }
     banner.isDisabled = false;
     const updateBanner = await banner.save();
@@ -82,10 +77,10 @@ const deleteBanner = async (req, res) => {
     const banner = await Banner.findById(req.params.id);
     if (!banner) {
         res.status(404);
-        throw new Error("banner not found");
+        throw new Error("Banner không tồn tại!");
     }
     await banner.remove();
-    res.status(200).json({ message: "banner has been deleted" });
+    res.status(200).json({ message: "Banner đã xóa thành công!" });
 };
 
 const BannerController = {

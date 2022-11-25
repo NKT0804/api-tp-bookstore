@@ -7,6 +7,7 @@ import Cart from "../models/CartModel.js";
 import Comment from "../models/CommentModel.js";
 import createSlug from "../utils/createSlug.js";
 import uploadImage from "../utils/uploadImage.js";
+import removeImage from "../utils/removeImage.js";
 import { admin, protect, optional } from "../middleware/AuthMiddleware.js";
 import { productQueryParams, validateConstants } from "../constants/searchConstants.js";
 
@@ -30,7 +31,7 @@ const createProduct = async (req, res) => {
     const isExist = await Product.findOne({ name: name });
     if (isExist) {
         res.status(400);
-        throw new Error("Product name already exist");
+        throw new Error("Sản phẩm đã tồn tại!");
     }
 
     // Tạo slug
@@ -63,7 +64,7 @@ const createProduct = async (req, res) => {
     });
     if (!newProduct) {
         res.status(400);
-        throw new Error("Invalid product data");
+        throw new Error("Dữ liệu không hợp lệ!");
     }
     const createdProduct = await newProduct.save();
     res.status(201).json(createdProduct);
@@ -71,7 +72,7 @@ const createProduct = async (req, res) => {
 
 // Non-user, user and admin filter product
 const getProducts = async (req, res) => {
-    const pageSize = Number(req.query.pageSize) || 8; //EDIT HERE
+    const limit = Number(req.query.limit) || 12;
     let page = Number(req.query.pageNumber) || 1;
     const rating = Number(req.query.rating) || 0;
     const maxPrice = Number(req.query.maxPrice) || 0;
@@ -132,9 +133,9 @@ const getProducts = async (req, res) => {
     //Check if product match keyword
     if (count == 0) {
         res.status(204);
-        throw new Error("No products found for this keyword");
+        throw new Error("Không có sản phẩm nào!");
     }
-    const pages = Math.ceil(count / pageSize);
+    const pages = Math.ceil(count / limit);
     page = page <= pages ? page : 1;
     //else
     const products = await Product.find({
@@ -144,11 +145,11 @@ const getProducts = async (req, res) => {
         ...priceFilter,
         ...statusFilter
     })
-        .limit(pageSize)
-        .skip(pageSize * (page - 1))
+        .limit(limit)
+        .skip(limit * (page - 1))
         .sort(sortBy)
         .populate("category", "name");
-    res.json({ products, page, pages, total: count });
+    res.status(200).json({ products, page, pages, total: count });
 };
 
 // //Admin get all disabled products
@@ -177,7 +178,7 @@ const getDetailProductBySlug = async (req, res) => {
     );
     if (!product) {
         res.status(404);
-        throw new Error("Product not Found");
+        throw new Error("Sản phẩm không tồn tại!");
     }
 
     // increment Product View counter
@@ -197,7 +198,7 @@ const getDetailProductById = async (req, res) => {
     );
     if (!product) {
         res.status(404);
-        throw new Error("Product not Found");
+        throw new Error("Sản phẩm không tồn tại!");
     }
 
     // increment Product View counter
@@ -213,7 +214,7 @@ const getProductComments = async (req, res) => {
     const product = await Product.findOne({ _id: req.params.id, isDisabled: false });
     if (!product) {
         res.status(404);
-        throw new Error("Product not Found");
+        throw new Error("Sản phẩm không tồn tại!");
     }
     let comments = await Comment.find({ product: product._id, isDisabled: false }).populate("user replies.user");
     res.status(200);
@@ -227,7 +228,7 @@ const reviewProduct = async (req, res, next) => {
     const product = await Product.findOne({ _id: productId, isDisabled: false });
     if (!product) {
         res.status(404);
-        throw new Error("Product not Found");
+        throw new Error("Sản phẩm không tồn tại!");
     }
     const orders = await Order.find({ user: req.user._id, "orderItems.product": product._id, isDisabled: false });
     const totalOrdered = orders.length;
@@ -237,9 +238,13 @@ const reviewProduct = async (req, res, next) => {
         }
         return previousValue;
     }, 0);
+    if (totalOrdered <= 0) {
+        res.status(400);
+        throw new Error("Bạn cần mua hàng để có thể đánh giá sản phẩm!");
+    }
     if (totalOrdered <= totalReviewed) {
         res.status(400);
-        throw new Error("Product already reviewed");
+        throw new Error("Bạn đã đánh giá sản phẩm này rồi!");
     }
     //.
     //else
@@ -256,7 +261,7 @@ const reviewProduct = async (req, res, next) => {
         product.numReviews;
     await product.save();
     res.status(201);
-    res.json({ message: "Added review" });
+    res.json({ message: "Đánh giá sản phẩm thành công!" });
 };
 
 //Admin update product
@@ -280,7 +285,7 @@ const updateProduct = async (req, res) => {
     const product = await Product.findOne({ _id: productId, isDisabled: false });
     if (!product) {
         res.status(404);
-        throw new Error("Product not Found");
+        throw new Error("Sản phẩm không tồn tại!");
     }
     // Tạo slug
     const slug = createSlug(name);
@@ -309,7 +314,7 @@ const updateProduct = async (req, res) => {
         existedCategory = await Category.findOne({ _id: category, isDisabled: false });
         if (!existedCategory) {
             res.status(404);
-            throw new Error("Category not found");
+            throw new Error("Danh mục không tồn tại!");
         }
         product.category = existedCategory._id;
     }
@@ -323,17 +328,17 @@ const disableProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) {
         res.status(404);
-        throw new Error("Product not found");
+        throw new Error("Sản phẩm không tồn tại!");
     }
     const order = await Order.findOne({ "orderItems.product": product._id, isDisabled: false });
     if (order) {
         res.status(400);
-        throw new Error("Cannot disable ordered product");
+        throw new Error("Không thể vô hiệu hóa sản phẩm, vì sản phẩm đang có trong 1 số đơn hàng!");
     }
     const cart = await Cart.findOne({ "cartItems.product": product._id });
     if (cart) {
         res.status(400);
-        throw new Error("Cannot disable in-cart product");
+        throw new Error("Không thể vô hiệu hóa sản phẩm, vì sản phẩm đang thuộc giỏ hàng của người dùng!");
     }
     const disabledProduct = await Product.findOneAndUpdate({ _id: product._id }, { isDisabled: true }, { new: true });
     //disable comments
@@ -348,31 +353,11 @@ const restoreProduct = async (req, res) => {
     const product = await Product.findOne({ _id: productId, isDisabled: true });
     if (!product) {
         res.status(404);
-        throw new Error("Product not found");
+        throw new Error("Sản phẩm không tồn tại!");
     }
-    // const duplicatedProduct = await Product.findOne({ name: product.name, isDisabled: false });
-    // if (duplicatedProduct) {
-    //     res.status(400);
-    //     throw new Error("Restore this product will result in duplicated product name");
-    // }
     product.isDisabled = false;
     const restoredProduct = await Product.findOneAndUpdate({ _id: product._id }, { isDisabled: false }, { new: true });
-    //restore comments
-    // const comments = await Comment.find({
-    //     product: restoredProduct._id,
-    //     isDisabled: true
-    // }).populate("user product replies.user replies.product");
-    // for (const comment of comments) {
-    //     if (comment.product._id.toString() === restoredProduct._id.toString() && comment.isDisabled == true) {
-    //         comment.isDisabled = comment.user.isDisabled || comment.product.isDisabled || false;
-    //     }
-    //     for (const reply of comment.replies) {
-    //         if (reply.product._id.toString() === restoredProduct._id.toString() && reply.isDisabled == true) {
-    //             reply.isDisabled = reply.user.isDisabled || reply.product.isDisabled || false;
-    //         }
-    //     }
-    //     await comment.save();
-    // }
+
     res.status(200);
     res.json(restoredProduct);
 };
@@ -382,23 +367,24 @@ const deleteProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
     if (!product) {
         res.status(404);
-        throw new Error("Product not found");
+        throw new Error("Sản phẩm không tồn tại!");
     }
     const order = await Order.findOne({ "orderItems.product": product._id, isDisabled: false });
     if (order) {
         res.status(400);
-        throw new Error("Cannot delete ordered product");
+        throw new Error("Không thể xóa sản phẩm, vì sản phẩm đang có trong 1 số đơn hàng!");
     }
     const cart = await Cart.findOne({ "cartItems.product": product._id });
     if (cart) {
         res.status(400);
-        throw new Error("Cannot delete in-cart product");
+        throw new Error("Không thể xóa sản phẩm, vì sản phẩm đang thuộc giỏ hàng của người dùng!");
     }
+    const removeImageProduct = removeImage(product.slug);
     const deletedProduct = await product.remove();
     //delete comments
     await Comment.deleteMany({ product: deletedProduct._id });
     res.status(200);
-    res.json({ message: "Product has been deleted" });
+    res.json({ message: "Sàn phẩm đã được xóa!" });
 };
 
 const ProductController = {

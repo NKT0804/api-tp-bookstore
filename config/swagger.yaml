@@ -1064,7 +1064,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: "#/components/schemas/Error"
-    /api/v1/order/ordered:
+    /api/v1/order/ordered/{userId}:
         get:
             summary: User get their orders
             description: User get their orders
@@ -1074,11 +1074,11 @@ paths:
                 - bearerAuth: []
             parameters:
                 - in: query
-                  name: dateOrder
+                  name: userId
                   required: false
                   schema:
                       type: string
-                  description: Sort orders by date (newest/latest)
+                  description: User ID
             responses:
                 "200":
                     description: Success
@@ -1450,6 +1450,8 @@ paths:
             summary: Create a new product
             tags:
                 - Product
+            security:
+                - bearerAuth: []
             requestBody:
                 description: Payload to create a new product
                 required: true
@@ -1956,6 +1958,9 @@ paths:
                                 email:
                                     type: string
                                     nullable: false
+                                phone:
+                                    type: string
+                                    nullable: false
                                 password:
                                     type: string
                                     nullable: false
@@ -1966,7 +1971,7 @@ paths:
                         application/json:
                             schema:
                                 allOf:
-                                    - $ref: "#/components/schemas/MyUser"
+                                    - $ref: "#/components/schemas/UserProfile"
                                     - type: object
                                       properties:
                                           refreshToken:
@@ -1989,6 +1994,8 @@ paths:
             description: Get all users by admin
             tags:
                 - User
+            security:
+                - bearerAuth: []
             parameters:
                 - in: query
                   name: dateOrder
@@ -2011,7 +2018,7 @@ paths:
                                 type: array
                                 items:
                                     allOf:
-                                        - $ref: "#/components/schemas/MyUser"
+                                        - $ref: "#/components/schemas/User"
                                         - type: object
                                           properties:
                                               createdAt:
@@ -2104,7 +2111,7 @@ paths:
                         application/json:
                             schema:
                                 allOf:
-                                    - $ref: "#/components/schemas/MyUser"
+                                    - $ref: "#/components/schemas/UserProfile"
                                     - type: object
                                       properties:
                                           createdAt:
@@ -2168,16 +2175,30 @@ paths:
                                 email:
                                     type: string
                                     nullable: true
-                                password:
+                                phone:
                                     type: string
                                     nullable: true
+                                sex:
+                                    type: string
+                                birthday:
+                                    type: string
+                                address:
+                                    type: object
+                                    properties:
+                                        province:
+                                            type: string
+                                        district:
+                                            type: string
+                                        ward:
+                                            type: string
+
             responses:
                 "200":
                     description: Success
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/MyUser"
+                                $ref: "#/components/schemas/UserProfile"
                 "400":
                     description: User not found
                     content:
@@ -2196,6 +2217,8 @@ paths:
             description: Upload/Update Avatar for User
             tags:
                 - User
+            security:
+                - bearerAuth: []
             parameters:
                 - name: userId
                   in: path
@@ -2221,7 +2244,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/CreateOrUpdateAvatar"
+                                $ref: "#/components/schemas/UserProfile"
                 "401":
                     description: Unauthorized
                     content:
@@ -2240,6 +2263,8 @@ paths:
             description: Update Avatar for User
             tags:
                 - User
+            security:
+                - bearerAuth: []
             parameters:
                 - name: userId
                   in: path
@@ -2394,7 +2419,7 @@ paths:
                         application/json:
                             schema:
                                 allOf:
-                                    - $ref: "#/components/schemas/MyUser"
+                                    - $ref: "#/components/schemas/UserProfile"
                                     - type: object
                                       properties:
                                           createdAt:
@@ -2528,6 +2553,21 @@ paths:
 
 components:
     schemas:
+        Address:
+            type: object
+            properties:
+                province:
+                    type: string
+                    description: Province
+                district:
+                    type: string
+                    description: District
+                ward:
+                    type: string
+                    description: Ward
+                specificAddress:
+                    type: string
+                    description: Specific Address
         Banner:
             type: object
             properties:
@@ -2731,7 +2771,7 @@ components:
                 paymentMethod:
                     type: string
                     description: Payment method
-                    default: "Thanh toán khi nhận hàng"
+                    default: Thanh toán khi nhận hàng
                 isPaid:
                     type: boolean
                     description: Is paid yet ?
@@ -2799,12 +2839,16 @@ components:
                     type: array
                     items:
                         $ref: "#/components/schemas/OrderItem"
+                phone:
+                    type: string
                 shippingAddress:
-                    $ref: "#/components/schemas/ShippingAddress"
+                    type: String,
+                    description: Shipping address
+                    default: ""
                 paymentMethod:
                     type: string
                     description: Payment method
-                    default: Paypal
+                    default: Thanh toán khi nhận hàng
                 itemsPrice:
                     type: number
                     description: Items price
@@ -2820,15 +2864,6 @@ components:
                     type: number
                     description: Total price
                     default: 0
-        OrderedUser:
-            type: object
-            properties:
-                _id:
-                    type: string
-                    description: User ID
-                name:
-                    type: string
-                    description: User name
         OrderItemWithID:
             allOf:
                 - $ref: "#/components/schemas/OrderItem"
@@ -2847,12 +2882,48 @@ components:
                 name:
                     type: string
                     description: Product name
-                image:
+                slug:
                     type: string
-                    description: Product image's url
+                    description: Product slug
+                author:
+                    type: string
+                    description: Author name
+                category:
+                    type: string
+                    description: Category name
+                publisher:
+                    type: string
+                    description: Publisher name
+                publishingYear:
+                    type: number
+                    description: Publishing year
+                supplier:
+                    type: string
+                    description: Supplier name
+                language:
+                    type: string
+                    description: Product language
+                numberOfPages:
+                    type: number
+                    description: Page number of the book
                 description:
                     type: string
                     description: Product description
+                price:
+                    type: number
+                    description: Product price
+                priceSale:
+                    type: number
+                    description: Product price has been reduced
+                countInStock:
+                    type: number
+                    description: Total amount of a product available
+                image:
+                    type: string
+                    description: Product image's url
+                totalSales:
+                    type: number
+                    description: Product total sales
                 reviews:
                     type: array
                     description: User reviews
@@ -2864,18 +2935,9 @@ components:
                 numReviews:
                     type: number
                     description: Number of reviews
-                price:
+                numViews:
                     type: number
-                    description: Product price
-                countInStock:
-                    type: number
-                    description: Total amount of a product available
-                category:
-                    type: string
-                    description: Product category id
-                totalSales:
-                    type: number
-                    description: Product total sales
+                    description: Number of views
                 timestamp:
                     $ref: "#/components/schemas/Timestamp"
                 __v:
@@ -2889,22 +2951,43 @@ components:
             properties:
                 name:
                     type: string
-                    description: Product ID
-                price:
+                    description: Product name
+                author:
+                    type: string
+                    description: Author name
+                category:
+                    type: string
+                    description: Category name
+                publisher:
+                    type: string
+                    description: Publisher name
+                publishingYear:
                     type: number
-                    description: Product price
+                    description: Publishing year
+                supplier:
+                    type: string
+                    description: Supplier name
+                language:
+                    type: string
+                    description: Product language
+                numberOfPages:
+                    type: number
+                    description: Page number of the book
                 description:
                     type: string
                     description: Product description
-                image:
-                    type: string
-                    description: Product image's url
+                price:
+                    type: number
+                    description: Product price
+                priceSale:
+                    type: number
+                    description: Product price has been reduced
                 countInStock:
                     type: number
                     description: Total amount of a product available
-                category:
+                image:
                     type: string
-                    description: Product category ID
+                    description: Product image's url
 
         Review:
             type: object
@@ -2925,15 +3008,6 @@ components:
 
         User:
             type: object
-            allOf:
-                - $ref: "#/components/schemas/MyUser"
-                - type: object
-                  properties:
-                      _id:
-                          type: string
-                          description: password
-        MyUser:
-            type: object
             properties:
                 _id:
                     type: string
@@ -2944,36 +3018,38 @@ components:
                 email:
                     type: string
                     description: email
+                phone:
+                    type: string
+                    description: phone
                 avatarUrl:
                     type: string
                     description: avatar url
                 isAdmin:
                     type: boolean
                     description: is Admin or not
+                sex:
+                    type: string
+                    description: user sex
+                birthday:
+                    type: string
+                    description: user birthday
+                address:
+                    $ref: "#/components/schemas/Address"
                 token:
                     type: string
                     description: JWT login token
-                isDisabled:
+                isVerified:
                     type: boolean
-                    description: is Disabled or not
-        UpdateAvatar:
-            type: object
-            properties:
-                _id:
+                    description: user is verify account
+                emailVerificationToken:
                     type: string
-                    description: user id
-                name:
+                    description: token verify email
+                resetPasswordToken:
                     type: string
-                    description: username
-                email:
-                    type: string
-                    description: email
-                avatarUrl:
-                    type: string
-                    description: avatar url
-                isAdmin:
-                    type: boolean
-                    description: is Admin or not
+                    description: token reset password
+                resetPasswordTokenExpiryTime:
+                    type: number
+                    description: Token lifetime
                 isDisabled:
                     type: boolean
                     description: is Disabled or not
@@ -2989,15 +3065,26 @@ components:
                 email:
                     type: string
                     description: email
+                phone:
+                    type: string
+                    description: phone
                 avatarUrl:
                     type: string
                     description: avatar url
                 isAdmin:
                     type: boolean
                     description: is Admin or not
-                isDisabled:
-                    type: boolean
-                    description: is Disabled or not
+                sex:
+                    type: string
+                    description: user sex
+                birthday:
+                    type: string
+                    description: user birthday
+                address:
+                    $ref: "#/components/schemas/Address"
+                token:
+                    type: string
+                    description: JWT login token
 
         Error:
             type: object

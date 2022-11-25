@@ -13,7 +13,7 @@ const createCategory = async (req, res) => {
     const isExist = await Category.findOne({ name: name, isDisabled: false });
     if (isExist) {
         res.status(400);
-        throw new Error("Category name is already exist");
+        throw new Error("Danh mục đã tồn tại!");
     }
     // Tạo slug
     let slug = createSlug(name);
@@ -27,14 +27,14 @@ const createCategory = async (req, res) => {
     });
     if (!newCategory) {
         res.status(400);
-        throw new Error("Invalid category data");
+        throw new Error("Dữ liệu không hợp lệ!");
     }
     const createdCategory = await newCategory.save();
     if (createdCategory) {
         res.status(201).json({ categoryName: createdCategory.name });
     } else {
         res.status(400);
-        throw new Error("Create category fail");
+        throw new Error("Tạo danh mục không thành công!");
     }
 };
 
@@ -59,7 +59,7 @@ const updateCategory = async (req, res) => {
     const category = await Category.findOne({ _id: categoryId, isDisabled: false });
     if (!category) {
         res.status(404);
-        throw new Error("Category not Found");
+        throw new Error("Danh mục không tồn tại!");
     }
     // Tạo slug
     let slug = createSlug(name);
@@ -78,17 +78,17 @@ const disableCategory = async (req, res) => {
     const category = await Category.findById(req.params.id);
     if (!category) {
         res.status(404);
-        throw new Error("Category not found");
+        throw new Error("Danh mục không tồn tại!");
     }
     const product = await Product.findOne({ category: category._id });
     if (product) {
         res.status(400);
-        throw new Error("Cannot disable category with products");
+        throw new Error("Không thể vô hiệu hóa danh mục, vì còn có sản phẩm thuộc danh mục này!");
     }
     category.isDisabled = true;
     await category.save();
     res.status(200);
-    res.json({ message: "Category has been disabled" });
+    res.json({ message: "Danh mục đã bị vô hiệu hóa!" });
 };
 
 //Admin restore disabled category
@@ -97,12 +97,7 @@ const restoreCategory = async (req, res) => {
     const category = await Category.findOne({ _id: categoryId, isDisabled: true });
     if (!category) {
         res.status(404);
-        throw new Error("Category not found");
-    }
-    const duplicatedCategory = await Category.findOne({ name: category.name, isDisabled: false });
-    if (duplicatedCategory) {
-        res.status(400);
-        throw new Error("Restore this category will result in duplicated category name");
+        throw new Error("Danh mục không tồn tại!");
     }
     category.isDisabled = false;
     const updateCategory = await category.save();
@@ -115,16 +110,16 @@ const deleteCategory = async (req, res) => {
     const category = await Category.findById(req.params.id);
     if (!category) {
         res.status(404);
-        throw new Error("Category not found");
+        throw new Error("Danh mục không tồn tại!");
     }
     const product = await Product.findOne({ category: category._id });
     if (product) {
         res.status(400);
-        throw new Error("Cannot disable category with products");
+        throw new Error("Không thể xóa danh mục, vì còn có sản phẩm thuộc danh mục này!");
     }
     await category.remove();
     res.status(200);
-    res.json({ message: "Category has been deleted" });
+    res.json({ message: "Danh mục đã xóa thành công!" });
 };
 
 const CategoryController = {

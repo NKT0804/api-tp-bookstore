@@ -17,7 +17,6 @@ import uploadImage from "../utils/uploadImage.js";
 import { sendMail } from "../utils/nodemailler.js";
 import crypto from "crypto";
 import schedule, { scheduleJob } from "node-schedule";
-
 const __dirname = path.resolve();
 
 //User login
@@ -29,7 +28,7 @@ const login = async (req, res) => {
         //check verify account
         if (!user.isVerified) {
             res.status(401);
-            throw new Error("Tài khoản chưa được xác minh");
+            throw new Error("Tài khoản chưa được xác minh!");
         }
         //delete old refresh token if existed
         await RefreshToken.deleteMany({ user: user._id });
@@ -61,7 +60,7 @@ const login = async (req, res) => {
         });
     } else {
         res.status(401);
-        throw new Error("Invalid Email or Password");
+        throw new Error("Email hoặc mật khẩu sai!");
     }
 };
 
@@ -73,7 +72,7 @@ const register = async (req, res, next) => {
     });
     if (isExistingUser) {
         res.status(409);
-        throw new Error("Email of user already exists");
+        throw new Error("Email đã tồn tại!");
     }
 
     try {
@@ -85,7 +84,7 @@ const register = async (req, res, next) => {
         });
         if (!newUser) {
             res.status(400);
-            throw new Error("Invalid user data");
+            throw new Error("Dữ liệu không hợp lệ!");
         }
 
         const newCart = await Cart.create({
@@ -94,13 +93,34 @@ const register = async (req, res, next) => {
         });
         if (!newCart) {
             res.status(500);
-            throw new Error("Failed to create user cart");
+            throw new Error("Tạo giỏ hàng không thành công!");
         }
 
         const emailVerificationToken = newUser.getEmailVerificationToken();
         await newUser.save();
         const url = `${process.env.WEB_CLIENT_URL}/register/verify/${newUser.email}/${emailVerificationToken}`;
-        const html = `<a href="${url}" target="_blank"><button>Xác thực tài khoản</button></a>`;
+        const html = `
+        <div style = "margin-left : 23%" >
+            <img src="https://res.cloudinary.com/nkt2001/image/upload/v1664988644/logo/logo_vd616y.png?fbclid=IwAR0hgGY9-hFxr30G2dacxHMczMGUJ6SLjddCZHy8tkqEd4FCmNL--ckVPX8"
+            style ="height: 100px">
+            <div style = "padding: 20px;
+            border: #e1e4e8 solid 1px;
+            width: 500px; font-size : 17px">
+            <span style = "font-size: 24px; font-weight: 600; margin-left: 29%">Xác thực tài khoản</span>
+            <p>Để kích hoạt tài khoản TPBookstore của bạn. Vui lòng xác thực tài khoản email của bạn :</p>
+            <a href="${url}" target="_blank"  style = "text-decoration: none; margin-left : 27%">
+            <button style = "background-color: #4ac4fa;
+            padding: 18px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 20px">
+                Xác thực tài khoản
+            </button>
+            </a>
+            <p>Trân trọng,</p>
+            <p>TPBookStore</p>
+            </div>
+        </div>`;
         //start cron-job
         let scheduledJob = schedule.scheduleJob(
             Date.now() + process.env.EMAIL_VERIFY_EXPIED_TIME_IN_MINUTE * 60 * 1000,
@@ -122,7 +142,7 @@ const register = async (req, res, next) => {
         //send verify email
         await sendMail(messageOptions);
         res.status(200);
-        res.json({ message: "Sending verification mail successfully" });
+        res.json({ message: "Đăng ký thành công, đã gửi yêu cầu xác minh tài khoản!" });
     } catch (error) {
         next(error);
     }
@@ -131,13 +151,11 @@ const register = async (req, res, next) => {
 // verify email
 const verifyEmail = async (req, res) => {
     const { verificationToken } = req.body || null;
-    console.log(verificationToken);
     const hashedToken = crypto.createHash("sha256").update(verificationToken).digest("hex");
-    console.log("================" + hashedToken);
     const user = await User.findOne({ emailVerificationToken: hashedToken });
     if (!user) {
         res.status(400);
-        throw new Error("Email verification token is not valid");
+        throw new Error("Mã thông báo xác nhận email không tồn tại hoặc đã hết hạn!");
     }
     user.isVerified = true;
     user.emailVerificationToken = null;
@@ -183,6 +201,16 @@ const getProfile = async (req, res) => {
     });
 };
 
+const getProfileByAdmin = async (req, res) => {
+    const userId = req.params.id;
+    const user = await User.findById(userId).select("-password");
+    if (!user) {
+        res.status(404);
+        throw new Error("Tài khoản không tồn tại");
+    }
+    res.status(200).json({ success: true, user });
+};
+
 //User update profile
 const updateProfile = async (req, res) => {
     const user = req.user;
@@ -218,11 +246,11 @@ const updatePassword = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) {
         res.status(404);
-        throw new Error("User not found");
+        throw new Error("Tài khoản không tồn tại!");
     }
     if (!(await user.matchPassword(currentPassword))) {
         res.status(400);
-        throw new Error("Password is not correct");
+        throw new Error("Mật khẩu hiện tại không đúng!");
     }
     user.password = newPassword;
 
@@ -249,7 +277,41 @@ const forgotPassword = async (req, res) => {
     await user.save();
     //send reset password email
     const url = `${process.env.WEB_CLIENT_URL}/resetPassword/${resetPasswordToken}`;
-    const html = `<a href="${url}" target="_blank"><button>Đặt lại mật khẩu</button></a>`;
+    const html = `
+    <img src="https://res.cloudinary.com/nkt2001/image/upload/v1664988644/logo/logo_vd616y.png?fbclid=IwAR0hgGY9-hFxr30G2dacxHMczMGUJ6SLjddCZHy8tkqEd4FCmNL--ckVPX8"
+    style ="height: 100px; margin-left: 29.5%; margin-bottom: -20px">
+    <div style = "margin-left: 22.5%; font-size: 17px">
+        <span style = "font-size: 24px; font-weight: 600; margin-left: 35px">
+            Thiết lập lại mật khẩu đăng nhập TBBookSTore
+        </span>
+        <div style = "width: 514px;
+            padding: 20px;
+            margin: 28px;
+            border: #e1e4e8 solid 1px;
+            border-radius: 8px">
+            <p style = "margin-left : 33%;
+            font-size: 20px;
+            font-weight: 600;">
+            Đặt lại mật khẩu
+            </p>
+            <p>Xin chào ${user.name}</p>
+            <p>Chúng tôi nhận được yêu cầu thiết lập lại mật khẩu cho tài khoản TPBookSTore của bạn. Vui lòng sử dụng nút sau để đặt lại  mật khẩu của bạn </p>
+            <a href="${url}" target="_blank" 
+                style = "text-decoration: none; margin-left: 32.5%;">
+            <button style = "background-color: #4ac4fa;
+                padding: 18px 30px;
+                border: none;
+                border-radius: 8px;
+                font-size: 17px">
+                    Đặt lại mật khẩu
+            </button>
+            </a>
+            <p>Nếu bạn không sử dụng liên kết này trong vòng 1 giờ, liên kết này sẽ hết hạn.</p>
+            <p>Trân trọng</p>
+            <p>TPBookStore</p>
+        </div>
+    </div>
+    `;
     //set up message options
     const messageOptions = {
         recipient: user.email,
@@ -270,7 +332,7 @@ const resetPassword = async (req, res) => {
     const { resetPasswordToken, newPassword } = req.body || null;
     if (!newPassword) {
         res.status(400);
-        throw new Error("Your new password is not valid");
+        throw new Error("Mật khẩu mới không hợp lệ!");
     }
     const hashedToken = crypto.createHash("sha256").update(resetPasswordToken).digest("hex");
     const user = await User.findOne({
@@ -278,7 +340,7 @@ const resetPassword = async (req, res) => {
     });
     if (!user) {
         res.status(400);
-        throw new Error("Reset password token is not valid");
+        throw new Error("Mã thông báo đặt lại mật khẩu không tồn tại!");
     }
     if (user.resetPasswordTokenExpiryTime < Date.now()) {
         res.status(400);
@@ -290,16 +352,36 @@ const resetPassword = async (req, res) => {
     user.resetPasswordTokenExpiryTime = null;
     await user.save();
     res.status(200);
-    res.json("Your password has been reset");
+    res.json("Mật khẩu của bạn đã được đặt lại!");
 };
 
 //Admin get users
 const getUsers = async (req, res) => {
-    const dateOrderFilter = validateConstants(userQueryParams, "date", req.query.dateOrder);
+    const limit = Number(req.query.limit) || 8;
+    let page = Number(req.query.page) || 1;
     const statusFilter = validateConstants(userQueryParams, "status", req.query.status);
-    const users = await User.find({ ...statusFilter }).sort({ ...dateOrderFilter });
-    res.status(200);
-    res.json(users);
+    const keyword = req.query.keyword
+        ? {
+              name: {
+                  $regex: req.query.keyword,
+                  $options: "i"
+              }
+          }
+        : {};
+
+    const count = await User.countDocuments({ ...keyword, ...statusFilter });
+    if (count == 0) {
+        res.status(204);
+        throw new Error("Không có tài khoản nào!");
+    }
+    const pages = Math.ceil(count / limit);
+    page = page <= pages ? page : 1;
+
+    const users = await User.find({ ...keyword, ...statusFilter })
+        .limit(limit)
+        .skip(limit * (page - 1))
+        .sort({ createdAt: "desc" });
+    res.status(200).json({ users, page, pages, total: count });
 };
 
 //User upload avatar
@@ -313,13 +395,13 @@ const uploadAvatar = async (req, res) => {
     }
     if (!user) {
         res.status(400);
-        throw new Error("User not Found");
+        throw new Error("Tài khoản không tồn tại!");
     }
     //folder path to upload avatar
     const avatarPath = path.join(__dirname, "/public/images/avatar/");
     if (!req.file) {
         res.status(400);
-        throw new Error("No provide an image");
+        throw new Error("Avatar không hợp lệ!");
     }
 
     //else
@@ -333,7 +415,7 @@ const uploadAvatar = async (req, res) => {
     //delete old avatar
     if (oldAvatar != "/images/avatar/default.png") {
         fs.unlink(path.join(__dirname, "public", oldAvatar), (err) => {
-            if (err) console.log("Delete old avatar have err:", err);
+            if (err) console.log("Xóa avatar cũ không thành công:", err);
         });
     }
 
@@ -359,12 +441,12 @@ const disableUser = async (req, res) => {
     const user = await User.findOne({ _id: userId, isDisabled: false });
     if (!user) {
         res.status(404);
-        throw new Error("User not found");
+        throw new Error("Tài khoản không tồn tại!");
     }
     const order = await Order.findOne({ user: user._id, isDisabled: false });
     if (order) {
         res.status(400);
-        throw new Error("Cannot disable user who had ordered");
+        throw new Error("Không thể vô hiệu hóa tài khoản này!");
     }
     res.status(200).json(disabledUser);
 };
@@ -375,7 +457,7 @@ const restoreUser = async (req, res) => {
     const user = await User.findOne({ _id: userId, isDisabled: true });
     if (!user) {
         res.status(404);
-        throw new Error("User not found");
+        throw new Error("Tài khoản không tồn tại!");
     }
     const restoredUser = await User.findOneAndUpdate({ _id: user._id }, { isDisabled: false }, { new: true });
     res.status(200).json(restoredUser);
@@ -386,12 +468,12 @@ const deleteUser = async (req, res, next) => {
     const user = await User.findById(req.params.id);
     if (!user) {
         res.status(404);
-        throw new Error("User not found");
+        throw new Error("Tài khoản không tồn tại!");
     }
     const order = await Order.findOne({ user: user._id, isDisabled: false });
     if (order) {
         res.status(400);
-        throw new Error("Cannot delete user who had ordered");
+        throw new Error("Không thể xóa tài khoản này!");
     }
     const session = await mongoose.startSession();
     const transactionOptions = {
@@ -406,7 +488,7 @@ const deleteUser = async (req, res, next) => {
             }).session(session);
             if (!deletedUser) {
                 await session.abortTransaction();
-                throw new Error("Something wrong while deleting user");
+                throw new Error("Xóa tài khoản không thành công!");
             }
             //delete refresh tokens
             const deletedRefreshToken = await RefreshToken.findOneAndDelete({
@@ -414,7 +496,7 @@ const deleteUser = async (req, res, next) => {
             }).session(session);
             if (!deletedRefreshToken) {
                 await session.abortTransaction();
-                throw new Error("Something wrong while deleting refresh token");
+                throw new Error("Xóa refresh token không thành công!");
             }
             //delete cart
             const deletedCart = await Cart.findOneAndDelete({
@@ -422,13 +504,13 @@ const deleteUser = async (req, res, next) => {
             }).session(session);
             if (!deletedCart) {
                 await session.abortTransaction();
-                throw new Error("Something wrong while deleting user cart");
+                throw new Error("Xóa giỏ hàng không thành công!");
             }
             //delete comments
             const deletedComments = await Comment.deleteMany({
                 user: deletedUser._id
             }).session(session);
-            res.status(200).json({ message: "User has been deleted" });
+            res.status(200).json({ message: "Tài khoản đã xóa thành công!" });
         }, transactionOptions);
     } catch (error) {
         next(error);
@@ -442,6 +524,7 @@ const UserController = {
     register,
     verifyEmail,
     getProfile,
+    getProfileByAdmin,
     updateProfile,
     getUsers,
     uploadAvatar,

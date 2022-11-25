@@ -1,4 +1,3 @@
-import ImportData from "./../ImportData.js";
 import orderRouter from "./orderRoutes.js";
 import productRouter from "./productRoutes.js";
 import userRouter from "./userRoutes.js";
@@ -9,7 +8,6 @@ import commentRouter from "./commentRoutes.js";
 import refreshTokenRouter from "./refreshTokenRoutes.js";
 
 const routes = (app) => {
-    app.use("/api/v1/import", ImportData);
     app.use("/api/v1/order", orderRouter);
     app.use("/api/v1/product", productRouter);
     app.use("/api/v1/user", userRouter);

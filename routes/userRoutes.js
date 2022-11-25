@@ -11,6 +11,7 @@ userRouter.post("/", expressAsyncHandler(UserController.register));
 userRouter.delete("/:id", protect, admin, expressAsyncHandler(UserController.deleteUser));
 userRouter.post("/login", expressAsyncHandler(UserController.login));
 userRouter.get("/profile", protect, expressAsyncHandler(UserController.getProfile));
+userRouter.get("/profile/:id", protect, admin, expressAsyncHandler(UserController.getProfileByAdmin));
 userRouter.put("/profile", protect, expressAsyncHandler(UserController.updateProfile));
 userRouter.post("/updateAvatar/:id", protect, upload.single("file"), expressAsyncHandler(UserController.uploadAvatar));
 userRouter.post("/:id/updatePassword", protect, expressAsyncHandler(UserController.updatePassword));

@@ -5,13 +5,13 @@ const productQueryParams = {
         newest: { createdAt: "desc" },
         latest: { createdAt: "asc" },
         total_sales: { totalSales: "desc" },
-        default: { createdAt: "desc" }
+        default: { totalSales: "desc" }
     },
     status: {
         disabled: { isDisabled: true },
         notDisabled: { isDisabled: false },
         all: {},
-        default: { isDisabled: false }
+        default: {}
     }
 };
 
@@ -30,28 +30,23 @@ const commentQueryParams = {
 };
 
 const orderQueryParams = {
-    date: {
-        newest: { createdAt: "desc" },
-        latest: { createdAt: "asc" },
-        default: { createdAt: "desc" }
-    },
     status: {
+        waiting: { confirmed: false, cancelled: false },
+        delivering: { confirmed: true, delivered: false, cancelled: false },
+        delivered: { delivered: true },
+        paid: { isPaid: true },
+        unpaid: { isPaid: false },
+        cancelled: { cancelled: true },
         disabled: { isDisabled: true },
         notDisabled: { isDisabled: false },
-        all: {},
         default: { isDisabled: false }
     }
 };
 
 const userQueryParams = {
-    date: {
-        newest: { createdAt: "desc" },
-        latest: { createdAt: "asc" },
-        default: { createdAt: "desc" }
-    },
     status: {
-        disabled: { isDisabled: true },
-        notDisabled: { isDisabled: false },
+        locked: { isDisabled: true },
+        is_active: { isDisabled: false },
         all: {},
         default: { isDisabled: false }
     }
