@@ -11,7 +11,7 @@ const productQueryParams = {
         disabled: { isDisabled: true },
         notDisabled: { isDisabled: false },
         all: {},
-        default: {}
+        default: { isDisabled: false }
     }
 };
 
@@ -53,11 +53,6 @@ const userQueryParams = {
 };
 
 const categoryQueryParams = {
-    date: {
-        newest: { createdAt: "desc" },
-        latest: { createdAt: "asc" },
-        default: { createdAt: "desc" }
-    },
     status: {
         disabled: { isDisabled: true },
         notDisabled: { isDisabled: false },

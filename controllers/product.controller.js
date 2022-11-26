@@ -103,7 +103,7 @@ const getProducts = async (req, res) => {
     if (categoryName == "All") {
         categoryIds = await Category.find({ ...statusFilter }).select({ _id: 1 });
     } else {
-        categoryIds = await Category.find({ name: categoryName, ...statusFilter }).select({ _id: 1 });
+        categoryIds = await Category.find({ slug: categoryName, ...statusFilter }).select({ _id: 1 });
     }
     //(categoryFilter);
     const categoryFilter = categoryIds ? { category: categoryIds } : {};

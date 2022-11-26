@@ -8,7 +8,7 @@ import createSlug from "../utils/createSlug.js";
 
 //Admin create new category
 const createCategory = async (req, res) => {
-    const { name } = req.body;
+    const { name, parent_category } = req.body;
 
     const isExist = await Category.findOne({ name: name, isDisabled: false });
     if (isExist) {
@@ -23,6 +23,7 @@ const createCategory = async (req, res) => {
     }
     const newCategory = new Category({
         name,
+        parent_category,
         slug
     });
     if (!newCategory) {
@@ -31,7 +32,7 @@ const createCategory = async (req, res) => {
     }
     const createdCategory = await newCategory.save();
     if (createdCategory) {
-        res.status(201).json({ categoryName: createdCategory.name });
+        res.status(201).json({ success: true, categoryName: createdCategory.name });
     } else {
         res.status(400);
         throw new Error("Tạo danh mục không thành công!");
@@ -40,21 +41,20 @@ const createCategory = async (req, res) => {
 
 //Get category
 const getCategory = async (req, res) => {
-    const dateOrderFilter = validateConstants(categoryQueryParams, "date", req.query.dateOrder);
     let statusFilter;
     if (!req.user || req.user.isAdmin == false) {
         statusFilter = validateConstants(categoryQueryParams, "status", "default");
     } else if (req.user.isAdmin) {
         statusFilter = validateConstants(categoryQueryParams, "status", req.query.status);
     }
-    const categories = await Category.find({ ...statusFilter }).sort({ ...dateOrderFilter });
+    const categories = await Category.find({ ...statusFilter }).sort({ createdAt: "desc" });
     res.status(200);
     res.json(categories);
 };
 
 //Admin udpate category
 const updateCategory = async (req, res) => {
-    const { name } = req.body;
+    const { name, parent_category } = req.body;
     const categoryId = req.params.id || null;
     const category = await Category.findOne({ _id: categoryId, isDisabled: false });
     if (!category) {
@@ -68,6 +68,7 @@ const updateCategory = async (req, res) => {
         slug = slug + "-" + Math.round(Math.random() * 10000).toString();
     }
     category.name = name || category.name;
+    category.parent_category = parent_category || category.parent_category;
     category.slug = slug || category.slug;
     const updatedCategory = await category.save();
     res.json(updatedCategory);

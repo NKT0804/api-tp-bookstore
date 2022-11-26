@@ -25,7 +25,7 @@ const createNewRefreshTokenForTest = async (req, res) => {
 
 //User refresh access token
 const refreshAccessToken = async (req, res) => {
-    const refreshTokenSendByUser = req.body.refreshToken || null;
+    const { refreshToken } = req.body || null;
     const parentRefreshToken = await RefreshToken.findOne({ refreshTokenItems: refreshTokenSendByUser });
     if (!parentRefreshToken) {
         res.status(404);
@@ -53,6 +53,7 @@ const refreshAccessToken = async (req, res) => {
     await parentRefreshToken.save();
     res.status(200);
     res.json({
+        success: true,
         token: newAccessToken,
         refreshToken: newRefreshToken
     });

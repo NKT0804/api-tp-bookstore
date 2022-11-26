@@ -6,7 +6,7 @@ import RefreshTokenController from "../controllers/refreshToken.controller.js";
 const refreshTokenRouter = express.Router();
 
 refreshTokenRouter.patch("/refresh", expressAsyncHandler(RefreshTokenController.refreshAccessToken));
-refreshTokenRouter.get("/", expressAsyncHandler(RefreshTokenController.getAllRefreshTokenForTest));
+// refreshTokenRouter.get("/", expressAsyncHandler(RefreshTokenController.getAllRefreshTokenForTest));
 refreshTokenRouter.post("/", protect, expressAsyncHandler(RefreshTokenController.createNewRefreshTokenForTest));
 
 export default refreshTokenRouter;

@@ -11,7 +11,11 @@ const CategorySchema = mongoose.Schema(
             required: false,
             default: ""
         },
-
+        parent_category: {
+            type: String,
+            required: true,
+            default: ""
+        },
         isDisabled: {
             type: Boolean,
             required: true,
