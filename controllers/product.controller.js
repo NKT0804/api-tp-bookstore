@@ -148,7 +148,7 @@ const getProducts = async (req, res) => {
         .limit(limit)
         .skip(limit * (page - 1))
         .sort(sortBy)
-        .populate("category", "name");
+        .populate("category");
     res.status(200).json({ products, page, pages, total: count });
 };
 
