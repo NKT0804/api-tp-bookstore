@@ -85,6 +85,7 @@ const getProducts = async (req, res) => {
     } else if (req.user.isAdmin) {
         statusFilter = validateConstants(productQueryParams, "status", req.query.status);
     }
+
     const keyword = req.query.keyword
         ? {
               name: {
@@ -101,9 +102,9 @@ const getProducts = async (req, res) => {
     }
     let categoryIds;
     if (categoryName == "All") {
-        categoryIds = await Category.find({ ...statusFilter }).select({ _id: 1 });
+        categoryIds = await Category.find({ isDisabled: false }).select({ _id: 1 });
     } else {
-        categoryIds = await Category.find({ slug: categoryName, ...statusFilter }).select({ _id: 1 });
+        categoryIds = await Category.find({ slug: categoryName, isDisabled: false }).select({ _id: 1 });
     }
     //(categoryFilter);
     const categoryFilter = categoryIds ? { category: categoryIds } : {};

@@ -26,15 +26,12 @@ const createNewRefreshTokenForTest = async (req, res) => {
 //User refresh access token
 const refreshAccessToken = async (req, res) => {
     const { refreshToken } = req.body || null;
-    const parentRefreshToken = await RefreshToken.findOne({ refreshTokenItems: refreshTokenSendByUser });
+    const parentRefreshToken = await RefreshToken.findOne({ refreshTokenItems: refreshToken });
     if (!parentRefreshToken) {
         res.status(404);
         throw new Error("Refresh token not found");
     }
-    if (
-        parentRefreshToken.refreshTokenItems.indexOf(refreshTokenSendByUser) !=
-        parentRefreshToken.refreshTokenItems.length - 1
-    ) {
+    if (parentRefreshToken.refreshTokenItems.indexOf(refreshToken) != parentRefreshToken.refreshTokenItems.length - 1) {
         await RefreshToken.deleteOne({ _id: parentRefreshToken._id });
         res.status(401);
         throw new Error("Refresh token is expired, please login again");

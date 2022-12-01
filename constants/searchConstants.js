@@ -39,7 +39,7 @@ const orderQueryParams = {
         cancelled: { cancelled: true },
         disabled: { isDisabled: true },
         notDisabled: { isDisabled: false },
-        default: { isDisabled: false }
+        default: {}
     }
 };
 

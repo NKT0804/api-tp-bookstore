@@ -63,7 +63,7 @@ const getCommentByAdmin = async (req, res) => {
     const statusFilter = validateConstants(commentQueryParams, "status", req.query.status);
     const comments = await Comment.find({ ...statusFilter })
         .sort({ ...dateOrderFilter })
-        .populate("user replies.user");
+        .populate("user replies.user product", "slug name avatarUrl");
     res.status(200);
     res.json(comments);
 };

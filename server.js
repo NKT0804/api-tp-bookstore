@@ -33,7 +33,7 @@ app.get("/", (req, res) => {
     res.send(
         `Welcome to TPBookstore API, <a href='${
             process.env.WEB_CLIENT_URL || 3000
-        }'>Click here to visit the shopping page</a><br>Made by Tuan & Phu 01/10/2022`
+        }'>Click here to visit the shopping page</a><br>Made by Nguyễn Khắc Tuấn & Nguyễn Viết Phú 01/10/2022`
     );
 });
 

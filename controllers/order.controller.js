@@ -49,12 +49,6 @@ const createNewOrder = async (req, res, next) => {
                     res.status(400);
                     throw new Error("Đơn hàng có sản phẩm đã vượt số lượng sản phẩm trong kho!");
                 }
-                /* let cartItemIndex = cart.cartItems.findIndex(
-                        (cartItem) => cartItem.product.toString() == orderItem.product.toString()
-                    );
-                    if (cartItemIndex !== -1) {
-                        cart.cartItems.splice(cartItemIndex, 1);
-                    } */
             }
             const updatedCart = await Cart.findOneAndUpdate(
                 { user: req.user._id },
@@ -68,6 +62,17 @@ const createNewOrder = async (req, res, next) => {
             const createdOrder = await order.save();
             res.status(201);
             res.json(createdOrder);
+            //  send order to customer
+            const url = `${process.env.WEB_CLIENT_URL}/order`;
+            const html = `
+            <div style = "display: flex">
+            <span>Mã đơn hàng: </span>
+            <span>${order._id}</span>
+            </div>
+            <div>
+            
+            </div>
+            `;
         }, transactionOptions);
     } catch (error) {
         next(error);
@@ -180,6 +185,10 @@ const confirmDelivered = async (req, res) => {
         res.status(404);
         throw new Error("Đơn hàng không tồn tại!");
     }
+    if (!order.confirmed) {
+        res.status(400);
+        throw new Error("Đơn hàng chưa được xác nhận!");
+    }
     order.delivered = true;
     order.deliveredAt = Date.now();
     const updateOrder = await order.save();
@@ -213,6 +222,10 @@ const cancelOrderAdmin = async (req, res) => {
         res.status(404);
         throw new Error("Đơn hàng không tồn tại!");
     }
+    if (order.delivered) {
+        res.status(400);
+        throw new Error("Đơn hàng đã giao thành công không thể hủy được!");
+    }
     order.cancelled = true;
     const updateOrder = await order.save();
     res.status(200);
@@ -229,6 +242,10 @@ const cancelOrderUser = async (req, res) => {
     if (!order) {
         res.status(404);
         throw new Error("Đơn hàng không tồn tại!");
+    }
+    if (order.confirmed) {
+        res.status(400);
+        throw new Error("Đơn hàng đã được xác nhận không thể hủy, vui lòng liên hệ cửa hàng để được hỗ trợ!");
     }
     order.cancelled = true;
     const updateOrder = await order.save();
@@ -258,6 +275,10 @@ const disableOrder = async (req, res) => {
         res.status(404);
         throw new Error("Đơn hàng không tồn tại!");
     }
+    if (!order.cancelled || !order.delivered) {
+        res.status(400);
+        throw new Error("Đơn hàng không thể ẩn khi chưa giao hàng thành công hoặc chưa bị hủy!");
+    }
     order.isDisabled = true;
     await order.save();
     res.status(200);
@@ -285,9 +306,14 @@ const deleteOrder = async (req, res) => {
         res.status(404);
         throw new Error("Đơn hàng không tồn tại!");
     }
-    await order.remove();
-    res.status(200);
-    res.json({ message: "Đơn hàng đã được xóa!" });
+    if (order.cancelled || order.delivered) {
+        await order.remove();
+        res.status(200);
+        res.json({ message: "Đơn hàng đã được xóa!" });
+    } else {
+        res.status(400);
+        throw new Error("Đơn hàng không thể xóa khi chưa giao hàng thành công hoặc chưa bị hủy!");
+    }
 };
 
 const OrderController = {
