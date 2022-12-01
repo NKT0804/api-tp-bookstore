@@ -98,7 +98,7 @@ const register = async (req, res, next) => {
 
         const emailVerificationToken = newUser.getEmailVerificationToken();
         await newUser.save();
-        const url = `${process.env.WEB_CLIENT_URL}register/verify/${newUser.email}/${emailVerificationToken}`;
+        const url = `${process.env.WEB_CLIENT_URL}/register/verify/${newUser.email}/${emailVerificationToken}`;
         const html = `
         <div style = "margin-left : 23%" >
             <img src="https://res.cloudinary.com/nkt2001/image/upload/v1664988644/logo/logo_vd616y.png?fbclid=IwAR0hgGY9-hFxr30G2dacxHMczMGUJ6SLjddCZHy8tkqEd4FCmNL--ckVPX8"
@@ -276,7 +276,7 @@ const forgotPassword = async (req, res) => {
     const resetPasswordToken = user.getResetPasswordToken();
     await user.save();
     //send reset password email
-    const url = `${process.env.WEB_CLIENT_URL}resetPassword/${resetPasswordToken}`;
+    const url = `${process.env.WEB_CLIENT_URL}/resetPassword/${resetPasswordToken}`;
     const html = `
     <img src="https://res.cloudinary.com/nkt2001/image/upload/v1664988644/logo/logo_vd616y.png?fbclid=IwAR0hgGY9-hFxr30G2dacxHMczMGUJ6SLjddCZHy8tkqEd4FCmNL--ckVPX8"
     style ="height: 100px; margin-left: 29.5%; margin-bottom: -20px">
