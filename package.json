@@ -4,6 +4,9 @@
     "description": "```javascript\r npm i bcryptjs dotenv express express-async-handler jsonwebtoken mongoose morgan swagger-ui-express yamljs multer uuid sharp cors\r npm i --save-dev concurrently nodemon",
     "main": "server.js",
     "type": "module",
+    "engines": {
+    "node": "16.x"
+  },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "start": "node server.js",
