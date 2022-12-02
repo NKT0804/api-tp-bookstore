@@ -8,7 +8,6 @@ import Comment from "../models/CommentModel.js";
 import createSlug from "../utils/createSlug.js";
 import uploadImage from "../utils/uploadImage.js";
 import removeImage from "../utils/removeImage.js";
-import { admin, protect, optional } from "../middleware/AuthMiddleware.js";
 import { productQueryParams, validateConstants } from "../constants/searchConstants.js";
 
 //Admin create new product
@@ -20,6 +19,7 @@ const createProduct = async (req, res) => {
         description,
         author,
         image,
+        imageUrl,
         countInStock,
         category,
         publisher,
@@ -33,7 +33,6 @@ const createProduct = async (req, res) => {
         res.status(400);
         throw new Error("Sản phẩm đã tồn tại!");
     }
-
     // Tạo slug
     let slug = createSlug(name);
     const isExistSlug = await Product.findOne({ slug: slug });
@@ -41,7 +40,7 @@ const createProduct = async (req, res) => {
         slug = slug + "-" + Math.round(Math.random() * 10000).toString();
     }
     // Upload image
-    const urlImage = await uploadImage(image, "TPBookstore/products", slug);
+    const urlImage = await uploadImage(imageUrl ? imageUrl : image, "TPBookstore/products", slug);
     if (!urlImage.url) {
         res.status(400);
         throw new Error(urlImage.err);
@@ -173,10 +172,7 @@ const getProducts = async (req, res) => {
 //Non-user, user get product by slug
 const getDetailProductBySlug = async (req, res) => {
     const productSlug = req.params.slug || null;
-    const product = await Product.findOne({ slug: productSlug, isDisabled: false }).populate(
-        "reviews.user",
-        "name avatarUrl"
-    );
+    const product = await Product.findOne({ slug: productSlug }).populate("reviews.user", "name avatarUrl");
     if (!product) {
         res.status(404);
         throw new Error("Sản phẩm không tồn tại!");
@@ -274,6 +270,7 @@ const updateProduct = async (req, res) => {
         description,
         author,
         image,
+        imageUrl,
         countInStock,
         category,
         publisher,
@@ -288,13 +285,20 @@ const updateProduct = async (req, res) => {
         res.status(404);
         throw new Error("Sản phẩm không tồn tại!");
     }
+    const slug = product.slug;
     // Tạo slug
-    const slug = createSlug(name);
+    if (name != product.name) {
+        slug = createSlug(name);
+    }
     // Upload image
-    const urlImage = await uploadImage(image, "TPBookstore/products", slug);
-    if (!urlImage.url) {
-        res.status(400);
-        throw new Error(urlImage.err);
+    let urlImage = image;
+    if (image != product.image) {
+        const uploadImage = await uploadImage(image, "TPBookstore/products", slug);
+        if (!uploadImage.url) {
+            res.status(400);
+            throw new Error(uploadImage.err);
+        }
+        urlImage = uploadImage.url;
     }
 
     product.name = name || product.name;
@@ -303,7 +307,7 @@ const updateProduct = async (req, res) => {
     product.priceSale = priceSale || product.priceSale;
     product.description = description || product.description;
     product.author = author || product.author;
-    product.image = urlImage.url || product.image;
+    product.image = urlImage || product.image;
     product.countInStock = countInStock || product.countInStock;
     product.publisher = publisher || product.publisher;
     product.supplier = supplier || product.supplier;
@@ -336,14 +340,8 @@ const disableProduct = async (req, res) => {
         res.status(400);
         throw new Error("Không thể vô hiệu hóa sản phẩm, vì sản phẩm đang có trong 1 số đơn hàng!");
     }
-    const cart = await Cart.findOne({ "cartItems.product": product._id });
-    if (cart) {
-        res.status(400);
-        throw new Error("Không thể vô hiệu hóa sản phẩm, vì sản phẩm đang thuộc giỏ hàng của người dùng!");
-    }
-    const disabledProduct = await Product.findOneAndUpdate({ _id: product._id }, { isDisabled: true }, { new: true });
-    //disable comments
-    await Comment.updateMany({ isDisabled: false, product: disabledProduct._id }, { $set: { isDisabled: true } });
+
+    const disabledProduct = await Product.findOneAndUpdate({ _id: product._id }, { isDisabled: true });
     res.status(200);
     res.json(disabledProduct);
 };

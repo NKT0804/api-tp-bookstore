@@ -397,27 +397,31 @@ const uploadAvatar = async (req, res) => {
         res.status(400);
         throw new Error("Tài khoản không tồn tại!");
     }
-    //folder path to upload avatar
-    const avatarPath = path.join(__dirname, "/public/images/avatar/");
-    if (!req.file) {
+    const urlImage = await uploadImage(req.body.file, "TPBookstore/users", user._id);
+    if (!urlImage.url) {
         res.status(400);
-        throw new Error("Avatar không hợp lệ!");
+        throw new Error(urlImage.err);
     }
+    // //folder path to upload avatar
+    // const avatarPath = path.join(__dirname, "/public/images/avatar/");
+    // if (!req.file) {
+    //     res.status(400);
+    //     throw new Error("Avatar không hợp lệ!");
+    // }
 
-    //else
-    const filename = await resize.save(avatarPath, req.file.buffer);
-    // res.json(filename);
-
-    const oldAvatar = user.avatarUrl;
-    user.avatarUrl = `/images/avatar/${filename}`;
+    // //else
+    // const filename = await resize.save(avatarPath, req.file.buffer);
+    // // res.json(filename);
+    // const oldAvatar = user.avatarUrl;
+    user.avatarUrl = urlImage.url;
     const updateUser = await user.save();
 
-    //delete old avatar
-    if (oldAvatar != "/images/avatar/default.png") {
-        fs.unlink(path.join(__dirname, "public", oldAvatar), (err) => {
-            if (err) console.log("Xóa avatar cũ không thành công:", err);
-        });
-    }
+    // //delete old avatar
+    // if (oldAvatar != "/images/avatar/default.png") {
+    //     fs.unlink(path.join(__dirname, "public", oldAvatar), (err) => {
+    //         if (err) console.log("Xóa avatar cũ không thành công:", err);
+    //     });
+    // }
 
     res.status(200).json({
         _id: updateUser._id,

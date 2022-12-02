@@ -2,6 +2,9 @@ import express from "express";
 import expressAsyncHandler from "express-async-handler";
 import { admin, protect, optional } from "../middleware/AuthMiddleware.js";
 import Banner from "../models/BannerModel.js";
+import uploadImage from "../utils/uploadImage.js";
+import createSlug from "../utils/createSlug.js";
+
 const createBanner = async (req, res) => {
     const { name, index, image, linkTo, role } = req.body;
 
@@ -10,13 +13,28 @@ const createBanner = async (req, res) => {
         res.status(400);
         throw new Error("Tên banner đã tồn tại!");
     }
+    // Tạo slug
+    let slug = createSlug(name);
+    const isExistSlug = await Banner.findOne({ slug: slug });
+    if (isExistSlug) {
+        slug = slug + "-" + Math.round(Math.random() * 10000).toString();
+    }
+
+    // Upload image
+    const urlImage = await uploadImage(image, "TPBookstore/slider and banner", slug);
+    if (!urlImage.url) {
+        res.status(400);
+        throw new Error(urlImage.err);
+    }
+
     const newBanner = new Banner({
         name,
         index,
-        image,
+        image: urlImage.url,
         linkTo,
         role
     });
+
     if (!newBanner) {
         res.status(400);
         throw new Error("Dữ liệu không hợp lệ!");

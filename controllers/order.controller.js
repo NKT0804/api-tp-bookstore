@@ -62,17 +62,6 @@ const createNewOrder = async (req, res, next) => {
             const createdOrder = await order.save();
             res.status(201);
             res.json(createdOrder);
-            //  send order to customer
-            const url = `${process.env.WEB_CLIENT_URL}/order`;
-            const html = `
-            <div style = "display: flex">
-            <span>Mã đơn hàng: </span>
-            <span>${order._id}</span>
-            </div>
-            <div>
-            
-            </div>
-            `;
         }, transactionOptions);
     } catch (error) {
         next(error);
@@ -275,14 +264,15 @@ const disableOrder = async (req, res) => {
         res.status(404);
         throw new Error("Đơn hàng không tồn tại!");
     }
-    if (!order.cancelled || !order.delivered) {
+    if (order.cancelled || order.delivered) {
+        order.isDisabled = true;
+        await order.save();
+        res.status(200);
+        res.json({ message: "Đơn hàng đã bị vô hiệu hóa!" });
+    } else {
         res.status(400);
         throw new Error("Đơn hàng không thể ẩn khi chưa giao hàng thành công hoặc chưa bị hủy!");
     }
-    order.isDisabled = true;
-    await order.save();
-    res.status(200);
-    res.json({ message: "Đơn hàng đã bị vô hiệu hóa!" });
 };
 
 //Admin restore disabled order
@@ -293,7 +283,7 @@ const restoreOrder = async (req, res) => {
         res.status(404);
         throw new Error("Đơn hàng không tồn tại!");
     }
-    order.isDisabled = save;
+    order.isDisabled = false;
     const updateOrder = await order.save();
     res.status(200);
     res.json(updateOrder);
