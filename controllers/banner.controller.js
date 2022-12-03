@@ -2,7 +2,7 @@ import express from "express";
 import expressAsyncHandler from "express-async-handler";
 import { admin, protect, optional } from "../middleware/AuthMiddleware.js";
 import Banner from "../models/BannerModel.js";
-import uploadImage from "../utils/uploadImage.js";
+import { cloudinaryRemove, cloudinaryUpload } from "../utils/cloudinary.js";
 import createSlug from "../utils/createSlug.js";
 
 const createBanner = async (req, res) => {
@@ -12,16 +12,10 @@ const createBanner = async (req, res) => {
         res.status(400);
         throw new Error("Tên banner đã tồn tại!");
     }
-    // Tạo slug
-    let slug = createSlug(name);
-    const isExistSlug = await Banner.findOne({ slug: slug });
-    if (isExistSlug) {
-        slug = slug + "-" + Math.round(Math.random() * 10000).toString();
-    }
 
     // Upload image
-    const urlImage = await uploadImage(JSON.parse(image), "TPBookstore/slider and banner", slug);
-    if (!urlImage.url) {
+    const urlImage = await cloudinaryUpload(JSON.parse(image), "TPBookstore/slider and banner", name);
+    if (!urlImage.secure_url) {
         res.status(400);
         throw new Error(urlImage.err);
     }
@@ -29,7 +23,7 @@ const createBanner = async (req, res) => {
     const newBanner = new Banner({
         name,
         index,
-        image: urlImage.url,
+        image: urlImage.secure_url,
         linkTo,
         role
     });
@@ -56,10 +50,26 @@ const updateBanner = async (req, res) => {
         res.status(404);
         throw new Error("Banner không tồn tại!");
     }
+    let slug = banner.slug;
+    // Tạo slug
+    if (name != banner.name) {
+        slug = createSlug(name);
+    }
+    let urlImage = banner.image;
+    if (image != banner.image) {
+        // Upload image
+        const uploadResult = await cloudinaryUpload(JSON.parse(image), "TPBookstore/slider and banner", name);
+
+        if (!uploadResult.secure_url) {
+            res.status(400);
+            throw new Error(uploadResult.err);
+        }
+        urlImage = uploadResult.secure_url;
+    }
 
     banner.name = name || banner.name;
     banner.index = index || banner.index;
-    banner.image = image || banner.image;
+    banner.image = urlImage || banner.image;
     banner.linkTo = linkTo || banner.linkTo;
     banner.role = role || banner.role;
     const updatedBanner = await banner.save();
@@ -96,6 +106,7 @@ const deleteBanner = async (req, res) => {
         res.status(404);
         throw new Error("Banner không tồn tại!");
     }
+    const result = await cloudinaryRemove(banner.name);
     await banner.remove();
     res.status(200).json({ message: "Banner đã xóa thành công!" });
 };

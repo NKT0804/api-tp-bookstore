@@ -6,8 +6,7 @@ import Order from "../models/OrderModel.js";
 import Cart from "../models/CartModel.js";
 import Comment from "../models/CommentModel.js";
 import createSlug from "../utils/createSlug.js";
-import uploadImage from "../utils/uploadImage.js";
-import removeImage from "../utils/removeImage.js";
+import { cloudinaryRemove, cloudinaryUpload } from "../utils/cloudinary.js";
 import { productQueryParams, validateConstants } from "../constants/searchConstants.js";
 
 //Admin create new product
@@ -39,8 +38,8 @@ const createProduct = async (req, res) => {
         slug = slug + "-" + Math.round(Math.random() * 10000).toString();
     }
     // Upload image
-    const urlImage = await uploadImage(JSON.parse(image), "TPBookstore/products", slug);
-    if (!urlImage.url) {
+    const urlImage = await cloudinaryUpload(JSON.parse(image), "TPBookstore/products", slug);
+    if (!urlImage.secure_url) {
         res.status(400);
         throw new Error(urlImage.err);
     }
@@ -51,7 +50,7 @@ const createProduct = async (req, res) => {
         priceSale,
         author,
         description,
-        image: urlImage.url,
+        image: urlImage.secure_url,
         countInStock,
         category,
         publisher,
@@ -277,13 +276,14 @@ const updateProduct = async (req, res) => {
         language,
         numberOfPages
     } = req.body;
+    const publicId = image.split(".").pop();
     const productId = req.params.id || null;
     const product = await Product.findOne({ _id: productId, isDisabled: false });
     if (!product) {
         res.status(404);
         throw new Error("Sản phẩm không tồn tại!");
     }
-    const slug = product.slug;
+    let slug = product.slug;
     // Tạo slug
     if (name != product.name) {
         slug = createSlug(name);
@@ -291,12 +291,12 @@ const updateProduct = async (req, res) => {
     // Upload image
     let urlImage = image;
     if (image != product.image) {
-        const uploadImage = await uploadImage(JSON.parse(image), "TPBookstore/products", slug);
-        if (!uploadImage.url) {
+        const uploadResult = await cloudinaryUpload(JSON.parse(image), "TPBookstore/products", slug);
+        if (!uploadResult.secure_url) {
             res.status(400);
-            throw new Error(uploadImage.err);
+            throw new Error(uploadResult.err);
         }
-        urlImage = uploadImage.url;
+        urlImage = uploadResult.secure_url;
     }
 
     product.name = name || product.name;
@@ -376,8 +376,8 @@ const deleteProduct = async (req, res) => {
         res.status(400);
         throw new Error("Không thể xóa sản phẩm, vì sản phẩm đang thuộc giỏ hàng của người dùng!");
     }
-    const removeImageProduct = removeImage(product.slug);
-    const deletedProduct = await product.remove();
+    await cloudinaryRemove(product.slug);
+    await product.remove();
     //delete comments
     await Comment.deleteMany({ product: deletedProduct._id });
     res.status(200);

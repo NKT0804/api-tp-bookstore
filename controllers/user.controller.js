@@ -13,7 +13,7 @@ import fs from "fs";
 import mongoose from "mongoose";
 import RefreshToken from "../models/RefreshTokenModel.js";
 import { userQueryParams, validateConstants } from "../constants/searchConstants.js";
-import uploadImage from "../utils/uploadImage.js";
+import { cloudinaryRemove, cloudinaryUpload } from "../utils/cloudinary.js";
 import { sendMail } from "../utils/nodemailler.js";
 import crypto from "crypto";
 import schedule, { scheduleJob } from "node-schedule";
@@ -397,31 +397,14 @@ const uploadAvatar = async (req, res) => {
         res.status(400);
         throw new Error("Tài khoản không tồn tại!");
     }
-    const urlImage = await uploadImage(req.body.file, "TPBookstore/users", user._id);
-    if (!urlImage.url) {
+    const urlImage = await cloudinaryUpload(req.body.file, "TPBookstore/users", user._id);
+    if (!urlImage.secure_url) {
         res.status(400);
         throw new Error(urlImage.err);
     }
-    // //folder path to upload avatar
-    // const avatarPath = path.join(__dirname, "/public/images/avatar/");
-    // if (!req.file) {
-    //     res.status(400);
-    //     throw new Error("Avatar không hợp lệ!");
-    // }
 
-    // //else
-    // const filename = await resize.save(avatarPath, req.file.buffer);
-    // // res.json(filename);
-    // const oldAvatar = user.avatarUrl;
-    user.avatarUrl = urlImage.url;
+    user.avatarUrl = urlImage.secure_url;
     const updateUser = await user.save();
-
-    // //delete old avatar
-    // if (oldAvatar != "/images/avatar/default.png") {
-    //     fs.unlink(path.join(__dirname, "public", oldAvatar), (err) => {
-    //         if (err) console.log("Xóa avatar cũ không thành công:", err);
-    //     });
-    // }
 
     res.status(200).json({
         _id: updateUser._id,
@@ -493,6 +476,11 @@ const deleteUser = async (req, res, next) => {
             if (!deletedUser) {
                 await session.abortTransaction();
                 throw new Error("Xóa tài khoản không thành công!");
+            }
+            const deletedAvatar = await cloudinaryRemove(user._id).session(session);
+            if (!deletedAvatar) {
+                await session.abortTransaction();
+                throw new Error("Xóa avatar tài khoản không thành công!");
             }
             //delete refresh tokens
             const deletedRefreshToken = await RefreshToken.findOneAndDelete({
