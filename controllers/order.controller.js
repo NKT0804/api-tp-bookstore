@@ -139,7 +139,7 @@ const getOrder = async (req, res) => {
  */
 const getDetailOrderById = async (req, res) => {
     const orderId = req.params.id || null;
-    const order = await Order.findOne({ _id: orderId, isDisabled: false }).populate("user", "-password");
+    const order = await Order.findOne({ _id: orderId }).populate("user", "-password");
     if (!order) {
         res.status(404);
         throw new Error("Đơn hàng không tồn tại!");

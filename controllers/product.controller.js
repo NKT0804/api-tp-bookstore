@@ -19,7 +19,6 @@ const createProduct = async (req, res) => {
         description,
         author,
         image,
-        imageUrl,
         countInStock,
         category,
         publisher,
@@ -40,7 +39,7 @@ const createProduct = async (req, res) => {
         slug = slug + "-" + Math.round(Math.random() * 10000).toString();
     }
     // Upload image
-    const urlImage = await uploadImage(imageUrl ? imageUrl : image, "TPBookstore/products", slug);
+    const urlImage = await uploadImage(JSON.parse(image), "TPBookstore/products", slug);
     if (!urlImage.url) {
         res.status(400);
         throw new Error(urlImage.err);
@@ -270,7 +269,6 @@ const updateProduct = async (req, res) => {
         description,
         author,
         image,
-        imageUrl,
         countInStock,
         category,
         publisher,
@@ -293,7 +291,7 @@ const updateProduct = async (req, res) => {
     // Upload image
     let urlImage = image;
     if (image != product.image) {
-        const uploadImage = await uploadImage(image, "TPBookstore/products", slug);
+        const uploadImage = await uploadImage(JSON.parse(image), "TPBookstore/products", slug);
         if (!uploadImage.url) {
             res.status(400);
             throw new Error(uploadImage.err);
@@ -355,7 +353,7 @@ const restoreProduct = async (req, res) => {
         throw new Error("Sản phẩm không tồn tại!");
     }
     product.isDisabled = false;
-    const restoredProduct = await Product.findOneAndUpdate({ _id: product._id }, { isDisabled: false }, { new: true });
+    const restoredProduct = await product.save();
 
     res.status(200);
     res.json(restoredProduct);

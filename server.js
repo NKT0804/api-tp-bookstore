@@ -7,26 +7,18 @@ import connectDatabase from "./config/mongodb.js";
 
 import { notFoundMiddleware, errorhandlingMiddleware } from "./middleware/Errors.js";
 import routes from "./routes/index.js";
-const corsOptions = {
-    origin: "http://localhost:3000",
-    credentials: true, //access-control-allow-credentials:true
-    optionSuccessStatus: 200
-};
+
 dotenv.config();
 connectDatabase();
 const app = express();
 const swaggerDocument = YAML.load("./config/swagger.yaml");
 app.use(express.static("public"));
 app.use(express.json());
-app.use(cors(corsOptions));
+app.use(cors());
 // api v1.0
 //handle route for api
 routes(app);
-app.all("/", function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "X-Requested-With");
-    next();
-});
+
 app.use(
     "/thisistpbookstoreswagger",
     swaggerUiExpress.serve,

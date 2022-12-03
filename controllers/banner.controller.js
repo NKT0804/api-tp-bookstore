@@ -7,7 +7,6 @@ import createSlug from "../utils/createSlug.js";
 
 const createBanner = async (req, res) => {
     const { name, index, image, linkTo, role } = req.body;
-
     const isExist = await Banner.findOne({ name: name, isDisabled: false });
     if (isExist) {
         res.status(400);
@@ -21,7 +20,7 @@ const createBanner = async (req, res) => {
     }
 
     // Upload image
-    const urlImage = await uploadImage(image, "TPBookstore/slider and banner", slug);
+    const urlImage = await uploadImage(JSON.parse(image), "TPBookstore/slider and banner", slug);
     if (!urlImage.url) {
         res.status(400);
         throw new Error(urlImage.err);
