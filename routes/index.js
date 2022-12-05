@@ -6,8 +6,9 @@ import cartRouter from "./cartRoutes.js";
 import bannerRouter from "./bannerRoutes.js";
 import commentRouter from "./commentRoutes.js";
 import refreshTokenRouter from "./refreshTokenRoutes.js";
-
+import ImportData from "../ImportData.js";
 const routes = (app) => {
+    app.use("/api/v1/import", ImportData);
     app.use("/api/v1/order", orderRouter);
     app.use("/api/v1/product", productRouter);
     app.use("/api/v1/user", userRouter);

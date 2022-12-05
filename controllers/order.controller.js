@@ -139,7 +139,7 @@ const getOrder = async (req, res) => {
  */
 const getDetailOrderById = async (req, res) => {
     const orderId = req.params.id || null;
-    const order = await Order.findOne({ _id: orderId }).populate("user", "-password");
+    const order = await Order.findOne({ _id: orderId }).populate("user orderItems.product", "-password");
     if (!order) {
         res.status(404);
         throw new Error("Đơn hàng không tồn tại!");
@@ -216,6 +216,13 @@ const cancelOrderAdmin = async (req, res) => {
         throw new Error("Đơn hàng đã giao thành công không thể hủy được!");
     }
     order.cancelled = true;
+    for (const orderItem of order.orderItems) {
+        const orderedProduct = await Product.findOneAndUpdate(
+            { _id: orderItem.product },
+            { $inc: { countInStock: +orderItem.qty, totalSales: -orderItem.qty } },
+            { new: true }
+        );
+    }
     const updateOrder = await order.save();
     res.status(200);
     res.json(updateOrder);
@@ -237,6 +244,13 @@ const cancelOrderUser = async (req, res) => {
         throw new Error("Đơn hàng đã được xác nhận không thể hủy, vui lòng liên hệ cửa hàng để được hỗ trợ!");
     }
     order.cancelled = true;
+    for (const orderItem of order.orderItems) {
+        const orderedProduct = await Product.findOneAndUpdate(
+            { _id: orderItem.product },
+            { $inc: { countInStock: +orderItem.qty, totalSales: -orderItem.qty } },
+            { new: true }
+        );
+    }
     const updateOrder = await order.save();
     res.status(200);
     res.json(updateOrder);

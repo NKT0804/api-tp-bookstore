@@ -2,7 +2,6 @@ import express from "express";
 import expressAsyncHandler from "express-async-handler";
 import { admin, protect } from "../middleware/AuthMiddleware.js";
 import generateToken from "../utils/generateToken.js";
-import resize from "../utils/resizeImage.js";
 import User from "../models/UserModel.js";
 import Order from "../models/OrderModel.js";
 import Cart from "../models/CartModel.js";
