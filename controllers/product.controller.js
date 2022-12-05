@@ -379,7 +379,7 @@ const deleteProduct = async (req, res) => {
     await cloudinaryRemove(product.slug);
     await product.remove();
     //delete comments
-    await Comment.deleteMany({ product: deletedProduct._id });
+    await Comment.deleteMany({ product: product._id });
     res.status(200);
     res.json({ message: "Sàn phẩm đã được xóa!" });
 };

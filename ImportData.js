@@ -1,7 +1,7 @@
 import express from "express";
 import expressAsyncHandler from "express-async-handler";
 import User from "./models/UserModel.js";
-import Cart from "./models/CartModel.js";
+// import Cart from "./models/CartModel.js";
 import Product from "./models/ProductModel.js";
 import Category from "./models/CategoryModel.js";
 
