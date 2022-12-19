@@ -42,9 +42,9 @@ const createCategory = async (req, res) => {
 //Get category
 const getCategory = async (req, res) => {
     let statusFilter;
-    if (!req.user || req.user.isAdmin == false) {
+    if (!req.user || !req.user.role === "admin" || !req.user.role === "staff") {
         statusFilter = validateConstants(categoryQueryParams, "status", "default");
-    } else if (req.user.isAdmin) {
+    } else if (req.user.role === "admin" || req.user.role === "staff") {
         statusFilter = validateConstants(categoryQueryParams, "status", req.query.status);
     }
     const categories = await Category.find({ ...statusFilter }).sort({ createdAt: "desc" });

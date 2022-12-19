@@ -9,7 +9,7 @@ const productQueryParams = {
     },
     status: {
         disabled: { isDisabled: true },
-        notDisabled: { isDisabled: false },
+        not_disabled: { isDisabled: false },
         all: {},
         default: { isDisabled: false }
     }
@@ -23,7 +23,7 @@ const commentQueryParams = {
     },
     status: {
         disabled: { isDisabled: true },
-        notDisabled: { isDisabled: false },
+        not_disabled: { isDisabled: false },
         all: {},
         default: { isDisabled: false }
     }
@@ -38,12 +38,20 @@ const orderQueryParams = {
         unpaid: { isPaid: false },
         cancelled: { cancelled: true },
         disabled: { isDisabled: true },
-        notDisabled: { isDisabled: false },
+        not_disabled: { isDisabled: false },
         default: {}
     }
 };
 
 const userQueryParams = {
+    role: {
+        all_staff: { role: { $in: ["admin", "staff", "shipper"] } },
+        staff: { role: "staff" },
+        shipper: { role: "shipper" },
+        admin: { role: "admin" },
+        customer: { role: "customer" },
+        default: { role: "customer" }
+    },
     status: {
         locked: { isDisabled: true },
         is_active: { isDisabled: false },
@@ -55,7 +63,7 @@ const userQueryParams = {
 const categoryQueryParams = {
     status: {
         disabled: { isDisabled: true },
-        notDisabled: { isDisabled: false },
+        not_disabled: { isDisabled: false },
         all: {},
         default: { isDisabled: false }
     }

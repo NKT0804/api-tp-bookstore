@@ -120,7 +120,10 @@ const deleteComment = async (req, res) => {
     //comment need to be deleted is a comment
     if (comment._id.toString() === commentId.toString()) {
         //check permission
-        if (req.user._id.toString() !== comment.user.toString() && !req.user.isAdmin) {
+        if (
+            (req.user._id.toString() !== comment.user.toString() && !req.user.role === "admin") ||
+            !req.user.role === "staff"
+        ) {
             res.status(400);
             throw new Error("Bạn không thể xóa bình luận này!");
         }
@@ -129,7 +132,10 @@ const deleteComment = async (req, res) => {
     } else {
         const index = comment.replies.findIndex((reply) => reply._id.toString() === commentId);
         //check permission
-        if (req.user._id.toString() !== comment.replies[index].user.toString() && !req.user.isAdmin) {
+        if (
+            (req.user._id.toString() !== comment.replies[index].user.toString() && !req.user.role === "admin") ||
+            !req.user.role === "staff"
+        ) {
             res.status(400);
             throw new Error("Bạn không thể xóa bình luận này!");
         }
@@ -157,7 +163,10 @@ const editComment = async (req, res) => {
         res.status(404);
         throw new Error("Bình luận không tồn tại!");
     }
-    if (req.user._id.toString() !== comment.user.toString() && !req.user.isAdmin) {
+    if (
+        (req.user._id.toString() !== comment.user.toString() && !req.user.role === "admin") ||
+        !req.user.role === "staff"
+    ) {
         res.status(400);
         throw new Error("Bạn không thể thay đổi bình luận này!");
     }

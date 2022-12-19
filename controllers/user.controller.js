@@ -51,7 +51,7 @@ const login = async (req, res) => {
             sex: user.sex,
             birthday: user.birthday,
             address: user.address,
-            isAdmin: user.isAdmin,
+            role: user.role || "customer",
             token: generateToken(user._id, process.env.ACCESS_TOKEN_SECRET, process.env.ACCESS_TOKEN_EXPIRESIN),
             refreshToken: newRefreshToken.tokenValue,
             createdAt: user.createdAt,
@@ -65,7 +65,7 @@ const login = async (req, res) => {
 
 //Non-user register new account
 const register = async (req, res, next) => {
-    const { name, email, phone, password } = req.body;
+    const { name, email, phone, password, role } = req.body;
     const isExistingUser = await User.findOne({
         email: email
     });
@@ -79,7 +79,8 @@ const register = async (req, res, next) => {
             name,
             email,
             phone,
-            password
+            password,
+            role: role || "customer"
         });
         if (!newUser) {
             res.status(400);
@@ -141,7 +142,7 @@ const register = async (req, res, next) => {
         //send verify email
         await sendMail(messageOptions);
         res.status(200);
-        res.json({ message: "Đăng ký thành công, đã gửi yêu cầu xác minh tài khoản!" });
+        res.json({ success: true, message: "Đăng ký thành công, đã gửi yêu cầu xác minh tài khoản!" });
     } catch (error) {
         next(error);
     }
@@ -175,7 +176,7 @@ const verifyEmail = async (req, res) => {
         sex: user.sex,
         birthday: user.birthday,
         address: user.address,
-        isAdmin: user.isAdmin,
+        role: user.role || "customer",
         token: generateToken(user._id, process.env.ACCESS_TOKEN_SECRET, process.env.ACCESS_TOKEN_EXPIRESIN),
         refreshToken: newRefreshToken.tokenValue,
         createdAt: user.createdAt,
@@ -194,7 +195,7 @@ const getProfile = async (req, res) => {
         birthday: req.user.birthday,
         address: req.user.address,
         avatarUrl: req.user.avatarUrl || "./images/avatar/default.png",
-        isAdmin: req.user.isAdmin,
+        role: req.user.role || "customer",
         createAt: req.user.createAt,
         isDisabled: req.user.isDisabled
     });
@@ -231,11 +232,25 @@ const updateProfile = async (req, res) => {
         birthday: updatedUser.birthday,
         address: updatedUser.address,
         avatarUrl: updatedUser.avatarUrl || "./images/avatar/default.png",
-        isAdmin: updatedUser.isAdmin,
+        role: user.role || "customer",
         createAt: updatedUser.createAt,
         isDisabled: updatedUser.isDisabled,
         token: generateToken(updatedUser._id, process.env.ACCESS_TOKEN_SECRET, process.env.ACCESS_TOKEN_EXPIRESIN)
     });
+};
+
+//User update profile
+const updateRoleStaff = async (req, res) => {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+        res.status(404);
+        throw new Error("Tài khoản không tồn tại!");
+    }
+    user.role = req.body.role || user.role;
+
+    const updatedUser = await user.save();
+    res.status(200);
+    res.json(updatedUser);
 };
 
 // update password
@@ -359,6 +374,7 @@ const getUsers = async (req, res) => {
     const limit = Number(req.query.limit) || 8;
     let page = Number(req.query.page) || 1;
     const statusFilter = validateConstants(userQueryParams, "status", req.query.status);
+    const roleFilter = validateConstants(userQueryParams, "role", req.query.role);
     const keyword = req.query.keyword
         ? {
               name: {
@@ -368,7 +384,7 @@ const getUsers = async (req, res) => {
           }
         : {};
 
-    const count = await User.countDocuments({ ...keyword, ...statusFilter });
+    const count = await User.countDocuments({ ...keyword, ...statusFilter, ...roleFilter });
     if (count == 0) {
         res.status(204);
         throw new Error("Không có tài khoản nào!");
@@ -376,7 +392,7 @@ const getUsers = async (req, res) => {
     const pages = Math.ceil(count / limit);
     page = page <= pages ? page : 1;
 
-    const users = await User.find({ ...keyword, ...statusFilter })
+    const users = await User.find({ ...keyword, ...statusFilter, ...roleFilter })
         .limit(limit)
         .skip(limit * (page - 1))
         .sort({ createdAt: "desc" });
@@ -389,7 +405,7 @@ const uploadAvatar = async (req, res) => {
         _id: req.user._id,
         isDisabled: false
     });
-    if (user.isAdmin && mongoose.isValidObjectId(req.params.id)) {
+    if (user.role === "admin" && mongoose.isValidObjectId(req.params.id)) {
         user = await User.findById(req.params.id);
     }
     if (!user) {
@@ -414,7 +430,7 @@ const uploadAvatar = async (req, res) => {
         birthday: updateUser.birthday,
         address: updateUser.address,
         avatarUrl: updateUser.avatarUrl,
-        isAdmin: updateUser.isAdmin,
+        role: updateUser.role,
         token: generateToken(updateUser._id, process.env.ACCESS_TOKEN_SECRET, process.env.ACCESS_TOKEN_EXPIRESIN),
         isDisabled: updateUser.isDisabled,
         createAt: updateUser.createAt
@@ -429,12 +445,16 @@ const disableUser = async (req, res) => {
         res.status(404);
         throw new Error("Tài khoản không tồn tại!");
     }
-    const order = await Order.findOne({ user: user._id, isDisabled: false });
-    if (order) {
-        res.status(400);
-        throw new Error("Không thể vô hiệu hóa tài khoản này!");
-    }
-    res.status(200).json(disabledUser);
+    const orders = await Order.find({ user: user._id, isDisabled: false });
+    orders.map((order) => {
+        if (!order.cancelled || !order.delivered) {
+            res.status(400);
+            throw new Error("Không thể khóa vì tài khoản này đang có đơn hàng chưa hoàn thành!");
+        }
+    });
+    user.isDisabled = true;
+    const disableUser = await user.save();
+    res.status(200).json(disableUser);
 };
 
 //Admin restore disabled user
@@ -517,6 +537,7 @@ const UserController = {
     getProfile,
     getProfileByAdmin,
     updateProfile,
+    updateRoleStaff,
     getUsers,
     uploadAvatar,
     disableUser,

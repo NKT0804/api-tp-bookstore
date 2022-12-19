@@ -24,8 +24,26 @@ const protect = expressAsyncHandler(async (req, res, next) => {
     }
 });
 
+const shipper = (req, res, next) => {
+    if ((req.user && req.user.role === "shipper") || req.user.role === "admin") {
+        next();
+    } else {
+        res.status(401);
+        throw new Error("Not authorized as an shipper");
+    }
+};
+
+const staff = (req, res, next) => {
+    if (req.user && (req.user.role === "staff" || req.user.role === "admin")) {
+        next();
+    } else {
+        res.status(401);
+        throw new Error("Not authorized as an staff");
+    }
+};
+
 const admin = (req, res, next) => {
-    if (req.user && req.user.isAdmin) {
+    if (req.user && req.user.role === "admin") {
         next();
     } else {
         res.status(401);
@@ -51,4 +69,4 @@ const optional = expressAsyncHandler(async (req, res, next) => {
     }
 });
 
-export { protect, admin, optional };
+export { protect, shipper, staff, admin, optional };

@@ -7,13 +7,25 @@ const orderSchema = mongoose.Schema(
             required: true,
             ref: "User"
         },
+        receiver: {
+            type: String,
+            required: true
+        },
         phone: {
             type: String,
-            require: true
+            required: true
         },
         shippingAddress: {
             type: String,
             required: true
+        },
+        shipper: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null
+        },
+        estimatedDeliveryDate: {
+            type: Date
         },
         taxPrice: {
             type: Number,

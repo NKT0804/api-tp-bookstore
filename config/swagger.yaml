@@ -473,7 +473,7 @@ paths:
                   required: false
                   schema:
                       type: string
-                  description: Filter categories by status (disabled/notDisabled/all)
+                  description: Filter categories by status (disabled/not_disabled/all)
             responses:
                 "200":
                     description: Success
@@ -721,7 +721,7 @@ paths:
                   required: false
                   schema:
                       type: string
-                  description: Filter comment by status (disabled/notDisabled/all)
+                  description: Filter comment by status (disabled/not_disabled/all)
             responses:
                 "201":
                     description: Created
@@ -980,7 +980,7 @@ paths:
                   required: false
                   schema:
                       type: string
-                  description: Filter orders by status (disabled/notDisabled/all)
+                  description: Filter orders by status (disabled/not_disabled/all)
             responses:
                 "200":
                     description: Success
@@ -1525,7 +1525,7 @@ paths:
                   required: false
                   schema:
                       type: string
-                  description: Sort products by status (disabled/notDisabled/all)
+                  description: Sort products by status (disabled/not_disabled/all)
             responses:
                 "200":
                     description: Success
@@ -2008,7 +2008,7 @@ paths:
                   required: false
                   schema:
                       type: string
-                  description: Filter users by status (disabled/notDisabled/all)
+                  description: Filter users by status (disabled/not_disabled/all)
             responses:
                 "200":
                     description: Success
@@ -3024,9 +3024,9 @@ components:
                 avatarUrl:
                     type: string
                     description: avatar url
-                isAdmin:
-                    type: boolean
-                    description: is Admin or not
+                role:
+                    type: string
+                    description: user role
                 sex:
                     type: string
                     description: user sex
@@ -3071,9 +3071,9 @@ components:
                 avatarUrl:
                     type: string
                     description: avatar url
-                isAdmin:
-                    type: boolean
-                    description: is Admin or not
+                role:
+                    type: string
+                    description: user role
                 sex:
                     type: string
                     description: user sex

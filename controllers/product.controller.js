@@ -69,7 +69,7 @@ const createProduct = async (req, res) => {
 
 // Non-user, user and admin filter product
 const getProducts = async (req, res) => {
-    const limit = Number(req.query.limit) || 12;
+    const limit = Number(req.query.limit) || null;
     let page = Number(req.query.pageNumber) || 1;
     const rating = Number(req.query.rating) || 0;
     const maxPrice = Number(req.query.maxPrice) || 0;
@@ -77,12 +77,11 @@ const getProducts = async (req, res) => {
     const Sort = validateConstants(productQueryParams, "sort", req.query.sortBy);
     const sortBy = { ...Sort };
     let statusFilter;
-    if (!req.user || req.user.isAdmin == false) {
+    if (!req.user || !req.user.role === "admin" || !req.user.role === "staff") {
         statusFilter = validateConstants(productQueryParams, "status", "default");
-    } else if (req.user.isAdmin) {
+    } else if (req.user.role === "admin" || req.user.role === "staff") {
         statusFilter = validateConstants(productQueryParams, "status", req.query.status);
     }
-
     const keyword = req.query.keyword
         ? {
               name: {
@@ -333,11 +332,11 @@ const disableProduct = async (req, res) => {
         res.status(404);
         throw new Error("Sản phẩm không tồn tại!");
     }
-    const order = await Order.findOne({ "orderItems.product": product._id, isDisabled: false });
-    if (order) {
-        res.status(400);
-        throw new Error("Không thể vô hiệu hóa sản phẩm, vì sản phẩm đang có trong 1 số đơn hàng!");
-    }
+    // const order = await Order.findOne({ "orderItems.product": product._id, isDisabled: false });
+    // if (order) {
+    //     res.status(400);
+    //     throw new Error("Không thể vô hiệu hóa sản phẩm, vì sản phẩm đang có trong 1 số đơn hàng!");
+    // }
 
     const disabledProduct = await Product.findOneAndUpdate({ _id: product._id }, { isDisabled: true });
     res.status(200);

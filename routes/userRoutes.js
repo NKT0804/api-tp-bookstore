@@ -19,6 +19,7 @@ userRouter.patch("/forgotPassword", expressAsyncHandler(UserController.forgotPas
 userRouter.patch("/resetPassword", expressAsyncHandler(UserController.resetPassword));
 userRouter.patch("/verifyEmail", expressAsyncHandler(UserController.verifyEmail));
 userRouter.patch("/:id/disable", protect, admin, expressAsyncHandler(UserController.disableUser));
+userRouter.patch("/:id/updateRole", protect, admin, expressAsyncHandler(UserController.updateRoleStaff));
 userRouter.patch("/:id/restore", protect, admin, expressAsyncHandler(UserController.restoreUser));
 
 export default userRouter;
