@@ -344,7 +344,7 @@ const selectShipper = async (req, res) => {
         throw new Error("Đơn hàng không tồn tại!");
     }
     order.shipper = req.body.shipper || order.shipper;
-    order.estimatedDeliveryDate = req.body.estimatedDeliveryDate ?? order.estimatedDeliveryDate;
+    order.estimatedDeliveryDate = req.body.estimatedDeliveryDate || order.estimatedDeliveryDate;
     const updateOrder = await order.save();
     res.status(200);
     res.json(updateOrder);
